@@ -66,8 +66,10 @@ public class ProjectEntitiesService {
             Files.createDirectories(projectPath.getParent(), config.UNIX_CHMOD_755);
             Files.createDirectory(projectPath, config.UNIX_CHMOD_775);
             copyDataToFolderFromTemplate(projectPath);
-            link = config.pmRoot.resolve(user.getSurname() + "_" + user.getName()).resolve(LocalDate.now().toString());
+            link = config.pmRoot.resolve(user.getSurname() + "_" + user.getName());
             if(Files.notExists(link)) Files.createDirectories(link, config.UNIX_CHMOD_755);
+            link = link.resolve(LocalDate.now().toString());
+            if(Files.notExists(link)) Files.createDirectory(link, config.UNIX_CHMOD_775);
             link = link.resolve(projectDate + "_" + projectNumber + "_" + clientName + "_" + workflow + "_" + sLanguage + "-" + tLanguages);
             if(Files.notExists(link)) Files.createSymbolicLink(link, projectPath);
         } catch (IOException ex){
