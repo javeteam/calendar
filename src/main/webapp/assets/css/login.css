@@ -1,0 +1,44 @@
+.container{
+    margin-left: auto;
+    margin-right: auto;
+    width: 1000px;
+}
+
+.page-header{
+    padding-bottom: 8px;
+    margin: 36px 0 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.login-area{
+    width: 430px;
+    margin: 5% auto;
+    padding: 20px;
+    background: white;
+}
+
+.form-group{
+    margin-bottom: 15px;
+    text-align: right;
+}
+
+.form-group label{
+    font-size: 14px;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.form-group input{
+    width: 290px;
+    background: transparent;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 0 10px;
+}
+
+.login-btn{
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+
+}
