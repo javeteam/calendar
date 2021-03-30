@@ -68,7 +68,7 @@
                     <c:if test="${hasAdminRole || !item.startDatePassed}">
                         <div class="option">
                             <a class="delete">Delete</a>
-                            <form id="deleteForm" hidden action="${pageContext.request.contextPath}/ajax/decalete" method="post">
+                            <form id="deleteForm" hidden action="${pageContext.request.contextPath}/ajax/delete" method="post">
                                 <input type="hidden" name="itemId" value="${item.id}">
                                 <input type="hidden" name="groupId" value="${item.groupId}">
                             </form>

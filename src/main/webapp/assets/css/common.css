@@ -787,6 +787,6 @@ tbody tr{
     color: #444;
 }
 
-.item-form input{
+#clientEmailSubject{
     width: 100%;
 }
