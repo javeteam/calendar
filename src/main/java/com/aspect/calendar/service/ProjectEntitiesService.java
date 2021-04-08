@@ -70,7 +70,7 @@ public class ProjectEntitiesService {
             if(Files.notExists(link)) Files.createDirectories(link, config.UNIX_CHMOD_755);
             link = link.resolve(LocalDate.now().toString());
             if(Files.notExists(link)) Files.createDirectory(link, config.UNIX_CHMOD_775);
-            link = link.resolve(projectDate + "_" + projectNumber + "_" + clientName + "_" + workflow + "_" + sLanguage + "-" + tLanguages);
+            link = link.resolve(projectDate + "_" + projectNumber + "_" + workflow + "_" + sLanguage + "-" + tLanguages + "_" + clientName);
             if(Files.notExists(link)) Files.createSymbolicLink(link, projectPath);
         } catch (IOException ex){
             String message = "Error during folders creation";

@@ -59,7 +59,7 @@
                                 <form hidden action="${pageContext.request.contextPath}/ajax/itemInfo" method="post">
                                     <input type="hidden" name="itemId" value="${item.id}">
                                 </form>
-                                <span title="${item.period}">${item.title}</span>
+                                <span title="${item.period}&#013;${item.title}">${item.shortTitle}</span>
                             </div>
                         </c:forEach>
                     </td>

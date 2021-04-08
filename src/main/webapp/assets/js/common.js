@@ -1,7 +1,7 @@
 function ajax(form) {
-    var post_url = $(form).attr("action"); //get form action url
-    var request_method = $(form).attr("method"); //get form GET/POST method
-    var form_data = new FormData(form); //Creates new FormData object
+    const post_url = $(form).attr("action"); //get form action url
+    const request_method = $(form).attr("method"); //get form GET/POST method
+    const form_data = new FormData(form); //Creates new FormData object
     return $.ajax({
         url : post_url,
         type: request_method,
@@ -26,20 +26,22 @@ function ajax_json(form) {
 // Set time mark height on page load
 setTimeMark();
 
-// Initiate page data update every 30s
-autoPageReload();
+setInterval(calPageReload, 30000);
 
-// Page data update function (if no toggle page opened)
-function autoPageReload(){
-    const togglePageOpened = $(document).find('.toggle').length > 0;
-    if(!togglePageOpened){
-        let form = $(document).find('#calendarPropertiesForm').get(0);
-        changeCalendarDate(form);
+function calPageReload(){
+    if($('.calendar').length > 0){
+        pageReplace(window.location);
     }
+}
 
-    setTimeout(function () {
-        autoPageReload();
-    }, 30000);
+function pageReplace(url) {
+    $.get(url)
+        .done(function (response) {
+            const doc = new DOMParser().parseFromString(response, 'text/html');
+            $('.document').replaceWith($(doc).find('.document'));
+            setTimeMark();
+            history.replaceState({}, null, url);
+        });
 }
 
 function setTimeMark(){
@@ -76,7 +78,7 @@ $(document).on('click', '.toggle, .toggle_close_btn', function (e) {
 })
 
 // Add new item clicking by cell
-$(document).on('click', '.cell', function (e) {
+$(document).on('click', '.j_cell', function (e) {
     if(e.target === this){
         const ts = $(this).children('input').val();
         const userId = $(this).closest('tr').children('td').children('input').val();
@@ -115,12 +117,13 @@ $(document).on('click', '#addItemSubmit, #editItemSubmit', function () {
 
     ajax_json(form.get(0))
         .done(function (response) {
-            const managerSelect = $('#responsibleManager');
-            const currentManager = parseInt(managerSelect.val());
-            //console.log(!isNaN(currentManager) + " " + currentManager + " " + form.find('select[name="managerId"]').val());
-            if(!isNaN(currentManager) && currentManager !== parseInt(form.find('select[name="managerId"]').val())) managerSelect.prop('disabled', true);
-            $('#calendarDate').val(response.calendarDate);
-            updateCalendarPage();
+            const responsibleManagerSelect = $('#responsibleManager');
+            const responsibleManager = parseInt(responsibleManagerSelect.val());
+            let url = new URLSearchParams(window.location.search);
+            if(!isNaN(responsibleManager) && responsibleManager !== parseInt(form.find('select[name="managerId"]').val()))  url.delete('responsibleManager');
+            url.set('date', response.calendarDate);
+            url = window.location.pathname + '?' + url.toString();
+            pageReplace(url);
             $('.toggle').remove();
 
         }).fail(function (xhr) {
@@ -130,26 +133,29 @@ $(document).on('click', '#addItemSubmit, #editItemSubmit', function () {
     })
 })
 
-// Change calendar date by changing calendarPropertiesForm
-$(document).on('change', '#calendarDate, #responsibleManager', function () {
-    const form = $(this).closest('form').get(0);
-    changeCalendarDate(form);
+// Update calendar by changing date
+$(document).on('change', '#calendarDate', function () {
+    let url = new URLSearchParams(window.location.search);
+    url.set('date', $(this).val());
+    url = window.location.pathname + '?' + url.toString();
+    pageReplace(url);
 })
 
-function changeCalendarDate (form){
-    if(form.checkValidity()){
-        updateCalendarPage(form);
-    }
-}
+// Update calendar by changing manager
+$(document).on('change', '#responsibleManager', function () {
+    let url = new URLSearchParams(window.location.search);
+    if(!$(this).val()) url.delete('responsibleManager');
+    else url.set('responsibleManager', $(this).val());
+    url = window.location.pathname + '?' + url.toString();
+    pageReplace(url);
+})
 
 // Change calendar date by clicking next/back buttons
 $(document).on('click', '.next,.back', function () {
-    const dateInput = $('#calendarDate');
-    let date = new Date(dateInput.val());
-    if ($(this).hasClass('next')) date.setDate(date.getDate() + 1);
-    else date.setDate(date.getDate() - 1);
-    dateInput.val(date.toISOString().substr(0, 10));
-    changeCalendarDate(dateInput.closest('form').get(0));
+    let url = new URLSearchParams(window.location.search);
+    url.set('date', $(this).data('target-date'));
+    url = window.location.pathname + '?' + url.toString();
+    pageReplace(url);
 })
 
 // Highlight items group
@@ -176,23 +182,6 @@ $(document).on('click', '.calendar-cell-item', function () {
         })
 })
 
-
-function updateCalendarPage(form){
-    if(form === undefined) form = $('#calendarPropertiesForm').get(0);
-    ajax(form)
-        .done(function (response) {
-            replaceDoc(response);
-        })
-}
-
-function replaceDoc(response){
-    let doc = new DOMParser().parseFromString(response, 'text/html');
-    doc = $(doc).find('.document').contents();
-    $(document).find('.document').empty().append(doc);
-    setTimeMark();
-
-}
-
 // show delete item options
 $(document).on('click', '.option .delete', function () {
     const options = $('#deleteOptions');
@@ -204,7 +193,7 @@ $(document).on('click', '.option .delete', function () {
         if(confirm('Are you sure?')){
             form.find('input[name="groupId"]').prop('disabled', true);
             ajax_json(form.get(0)).always(function () {
-                updateCalendarPage()
+                pageReplace(window.location);
                 $('.toggle').remove();
             });
         }
@@ -219,7 +208,7 @@ $(document).on('click', '#delItem, #delGroup', function () {
             form.find('input[name="groupId"]').prop('disabled', true);
         }
         ajax_json(form.get(0)).always(function () {
-            updateCalendarPage()
+            pageReplace(window.location);
             $('.toggle').remove();
         });
     }
@@ -234,9 +223,7 @@ $(document).on('click', '.option .edit', function () {
             let toggle = new DOMParser().parseFromString(response, 'text/html');
             toggle = $(toggle).find('.toggle');
             $('body').append(toggle);
-
         })
-
 })
 
 // Change deadline date to be same as start date if it set to readonly
@@ -269,7 +256,7 @@ $(document).on('click', '#splitSubmit', function () {
     const form = $('#splitForm').get(0)
     if (form.checkValidity()){
         ajax_json(form).done(function () {
-            updateCalendarPage()
+            pageReplace(window.location);
             $('.toggle').remove();
         });
     }
@@ -360,13 +347,13 @@ function languagesOK(){
 $(document).on('click', '#reportSubmitBtn', function () {
     $(this).prop('disabled', true);
     const checkbox = $('#itemsExport');
+    const form = $('#reportForm');
     if(checkbox.is(":checked")){
-        const form = $('#reportForm');
         form.attr('action', checkbox.data('url'));
         form.trigger('submit');
         return;
     }
-    ajax($('#reportForm').get(0))
+    ajax(form.get(0))
         .done(function (response) {
             let toggle = new DOMParser().parseFromString(response, 'text/html');
             toggle = $(toggle).find('.toggle-content');

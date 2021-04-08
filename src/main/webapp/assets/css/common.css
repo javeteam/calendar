@@ -101,9 +101,16 @@ button:disabled:hover{
     margin: 0;
 }
 
-.h3,h3{
+.menu-title{
+    text-decoration: none;
+    color: inherit;
     font-weight: normal;
+    font-size: 18px;
     margin: 0;
+}
+
+.menu-title:hover{
+    color: #63a800;
 }
 
 .cal-option-box{

@@ -110,12 +110,20 @@ public class CalendarItem {
         return startDate;
     }
 
+    public LocalDateTime getStartDateTime(){
+        return this.itemDate.atTime(this.startDate);
+    }
+
     public void setStartDate(LocalTime startDate) {
         this.startDate = startDate;
     }
 
     public LocalTime getDeadline() {
         return deadline;
+    }
+
+    public LocalDateTime getDeadlineDateTime(){
+        return this.itemDate.atTime(this.deadline);
     }
 
     public void setDeadline(LocalTime deadline) {

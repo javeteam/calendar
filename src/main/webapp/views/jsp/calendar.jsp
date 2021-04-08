@@ -13,35 +13,40 @@
 <body>
 <jsp:include page="menu.jsp"/>
 <div class="document">
-    <form id="newItemForm" hidden action="${pageContext.request.contextPath}/ajax/newItemToggle" method="post">
-        <input id="newItemDate" type="date" name="itemDate" value="${calendarDate}">
-        <input id="newItemStartDate" type="number" name="startTP" value="0">
-        <input id="newItemUserId" type="text" name="providerId" value="0">
-    </form>
+    <c:if test="${managerView}">
+        <form id="newItemForm" hidden action="${pageContext.request.contextPath}/ajax/newItemToggle" method="post">
+            <input id="newItemDate" type="date" name="itemDate" value="${calendarDate}">
+            <input id="newItemStartDate" type="number" name="startTP" value="0">
+            <input id="newItemUserId" type="text" name="providerId" value="0">
+        </form>
+    </c:if>
     <div class="cal-option-box">
-        <form class="period-selector" id="calendarPropertiesForm" action="${pageContext.request.contextPath}/calendar" method="post">
-            <div class="back"><i class="css-arrow left"></i></div>
+        <div class="period-selector">
+            <div class="back" data-target-date="${calendarDate.minusDays(1)}"><i class="css-arrow left"></i></div>
             <div class="calendar-date">
                 <span>${calendarDate.month.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${calendarDate.dayOfMonth}, ${calendarDate.year}</span>
                 <input id="calendarDate" type="date" name="date" value="${calendarDate}">
             </div>
-            <div class="next"><i class="css-arrow right"></i></div>
-            <select id="responsibleManager" name="responsibleManager">
-                <option value="">All managers</option>
-                <c:forEach var="manager" items="${managers}">
-                    <option ${responsibleManager == manager.id ? 'selected' : ''} value="${manager.id}">${manager.fullName}</option>
-                </c:forEach>
-            </select>
-        </form>
-        <div class="img-button statistic-button">
-            <img src="${pageContext.request.contextPath}/assets/icons/bar_chart-512.png"/>
-            <form hidden action="${pageContext.request.contextPath}/ajax/statisticParamsToggle" method="post"></form>
+            <div class="next" data-target-date="${calendarDate.plusDays(1)}"><i class="css-arrow right"></i></div>
+            <c:if test="${managerView}">
+                <select id="responsibleManager" name="responsibleManager">
+                    <option value="">All managers</option>
+                    <c:forEach var="manager" items="${managers}">
+                        <option ${responsibleManager == manager.id ? 'selected' : ''} value="${manager.id}">${manager.fullName}</option>
+                    </c:forEach>
+                </select>
+            </c:if>
         </div>
-        <div class="img-button new-folder-button">
-            <img src="${pageContext.request.contextPath}/assets/icons/folder.png"/>
-            <form hidden action="${pageContext.request.contextPath}/ajax/newFolderToggle" method="post"></form>
-        </div>
-
+        <c:if test="${managerView}">
+            <div class="img-button statistic-button">
+                <img src="${pageContext.request.contextPath}/assets/icons/bar_chart-512.png"/>
+                <form hidden action="${pageContext.request.contextPath}/ajax/statisticParamsToggle" method="post"></form>
+            </div>
+            <div class="img-button new-folder-button">
+                <img src="${pageContext.request.contextPath}/assets/icons/folder.png"/>
+                <form hidden action="${pageContext.request.contextPath}/ajax/newFolderToggle" method="post"></form>
+            </div>
+        </c:if>
     </div>
     <div class="calendar ${calendarDate.dayOfWeek.value > 5 ? 'weekend' : 'workday'}">
         <table>
@@ -71,7 +76,7 @@
                         </c:if>
                         <c:set var="userRole" value="${calendarRow.user.division}"/>
                     </c:if>
-                    <tr>
+                    <tr ${managerView ? '' : 'class="providerCalendarRow"'}>
                         <td class="userInfo">
                             <input type="hidden" value="${calendarRow.user.id}">
                             <div>
@@ -80,7 +85,7 @@
                             </div>
                         </td>
                         <c:forEach var="cell" items="${calendarRow.calendarCells}">
-                            <td class="cell ${cell.workingHours ? '' : 'not-working-hours'}">
+                            <td class="cell ${cell.workingHours ? '' : 'not-working-hours'} ${managerView ? 'j_cell' : ''}">
                                 <input type="hidden" value="${cell.startTP}">
                                 <c:forEach var="item" items="${cell.items}">
                                     <div class="calendar-cell-item ${item.type.toString().toLowerCase()} ${item.groupId > 0 ? 'items_group' : ''}" style="${item.CSSStyles}">
@@ -88,7 +93,7 @@
                                         <form hidden action="${pageContext.request.contextPath}/ajax/itemInfo" method="post">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                         </form>
-                                        <span title="${item.period}">${item.title}</span>
+                                        <span title="${item.period}&#013;${item.title}">${item.shortTitle}</span>
                                     </div>
                                 </c:forEach>
                             </td>

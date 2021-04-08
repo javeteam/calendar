@@ -164,6 +164,11 @@ public class CalendarItemForm {
         return title;
     }
 
+    public String getShortTitle(){
+        if(title != null && title.matches("^\\d{4}_\\d{4}.*")) return title.substring(5,9) + '_' + title.substring(0,4);
+        else return title;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }

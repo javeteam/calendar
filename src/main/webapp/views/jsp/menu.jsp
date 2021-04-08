@@ -4,7 +4,7 @@
 <jsp:useBean id="security" class="com.aspect.calendar.config.WebSecurity"/>
 
 <div class="menu">
-    <h3>Providers calendar</h3>
+    <a class="menu-title" href="${pageContext.request.contextPath}/calendar">Providers calendar</a>
     <div class="right-pane">
         <span>${security.authenticatedUser.fullName}</span>
         <a href="${pageContext.request.contextPath}/logout">

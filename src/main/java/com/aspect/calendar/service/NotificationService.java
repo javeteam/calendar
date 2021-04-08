@@ -34,7 +34,7 @@ public class NotificationService {
         Map<String, String> parameters = new HashMap<>();
         parameters.put("message", message);
         parameters.put("DIALOG_ID", "chat" + config.bitrixNotificationChatId);
-        parameters.put("SYSTEM", "Y");
+        parameters.put("SYSTEM", "N");
 
         try{
             String url_str = config.bitrixRESTUrl + getParamsString(parameters);

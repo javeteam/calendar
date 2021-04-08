@@ -2,20 +2,28 @@ package com.aspect.calendar.service;
 
 import com.aspect.calendar.dao.CalendarItemDao;
 import com.aspect.calendar.entity.calendar.CalendarItem;
+import com.aspect.calendar.entity.exceptions.CalendarItemProcessingException;
+import com.aspect.calendar.entity.user.AppUser;
 import com.aspect.calendar.entity.user.Person;
 import com.aspect.calendar.entity.calendar.UserDayCalendar;
 import com.aspect.calendar.entity.report.LoadReport;
 import com.aspect.calendar.form.CalendarItemForm;
+import com.aspect.calendar.form.SubmitItemForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.aspect.calendar.utils.CommonUtils.timeFormatter;
 
 @Service
 public class CalendarItemService {
@@ -160,6 +168,88 @@ public class CalendarItemService {
 
     public String getItemsAsCSV(LocalDate dateFrom, LocalDate dateTo, int providerId){
         return this.calendarItemDao.getItemsAsCSV(dateFrom, dateTo, providerId);
+    }
+
+    public String addNewItem(SubmitItemForm form, AppUser authenticatedUser) throws CalendarItemProcessingException {
+        LocalDateTime startDateTime = form.getStartDate().atTime(form.getStartDateHour(), form.getStartDateMinute());
+        if(startDateTime.isBefore(LocalDateTime.now()) && ! authenticatedUser.hasRole("ADMIN")){
+            throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to create items in the past" + "\"}", HttpStatus.FORBIDDEN);
+        }
+
+        if(!form.isValid()) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + form.getErrorMessage() + "\"}", HttpStatus.BAD_REQUEST);
+
+        List<List<CalendarItem>> groups = form.split();
+
+        StringBuilder sb = new StringBuilder();
+        for(List<CalendarItem> group : groups){
+            String intersectedItems = getIntersectedItemsTitle(group);
+            if(intersectedItems != null) sb.append(' ').append(intersectedItems);
+            for (CalendarItem item : group){
+                item.setCreatedBy(authenticatedUser);
+            }
+        }
+
+        if(sb.toString().length() > 0) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Creation failed! New item intersect: " + sb.toString() + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        for (List<CalendarItem> group : groups){
+            saveGroup(group);
+        }
+
+        return "{\"status\":\"Success\",\"calendarDate\":\"" + startDateTime.toLocalDate() + "\"}";
+    }
+
+    public String editItem(SubmitItemForm form, AppUser authenticatedUser) throws CalendarItemProcessingException{
+        if(!form.isValid()) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + form.getErrorMessage() + "\"}", HttpStatus.BAD_REQUEST);
+
+        CalendarItem item = form.convertToCalendarItem();
+        if(item == null) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Event start and deadline date must be the same. To extend item use split function" + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
+
+
+        item.setModifiedBy(authenticatedUser);
+        if(!authenticatedUser.hasRole("ADMIN")){
+            CalendarItem existingItem = getItemById(item.getId());
+            boolean startDatePassed = existingItem.getStartDateTime().plusMinutes(15).isBefore(LocalDateTime.now());
+            boolean startDateChanged = !item.getStartDateTime().isEqual(existingItem.getStartDateTime());
+            boolean deadlinePassed = existingItem.getDeadlineDateTime().plusMinutes(15).isBefore(LocalDateTime.now());
+            boolean deadlineChanged = !item.getDeadlineDateTime().isEqual(existingItem.getDeadlineDateTime());
+
+            if( startDatePassed && startDateChanged || deadlinePassed && deadlineChanged ){
+                throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to edit items which have already started" + "\"}", HttpStatus.FORBIDDEN);
+            }
+
+            boolean newStartDateInThePast = item.getStartDateTime().plusMinutes(15).isBefore(LocalDateTime.now());
+            boolean newDeadlineInThePast = item.getDeadlineDateTime().plusMinutes(15).isBefore(LocalDateTime.now());
+
+            if( startDateChanged && newStartDateInThePast || deadlineChanged && newDeadlineInThePast ){
+                throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to set items in the past" + "\"}", HttpStatus.FORBIDDEN);
+            }
+        }
+
+        String intersectedItems = getIntersectedItemsTitle(item);
+        if(intersectedItems != null) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Save failed! New item intersect: " + intersectedItems + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
+
+        saveItem(item);
+
+        return "{\"status\":\"Success\",\"calendarDate\":\"" + item.getItemDate() + "\"}";
+    }
+
+    public String splitItem(int itemId, String splitTime) {
+        CalendarItem item = getItemById(itemId);
+
+        LocalTime sTime = LocalTime.parse(splitTime, timeFormatter);
+        if(!sTime.minusMinutes(10).isBefore(item.getStartDate()) && !sTime.plusMinutes(10).isAfter(item.getDeadline())){
+            CalendarItem newItem = new CalendarItem(item);
+            item.setDeadline(sTime);
+            newItem.setStartDate(sTime);
+
+            List<CalendarItem> group = new ArrayList<>();
+            group.add(item);
+            group.add(newItem);
+
+            saveGroup(group);
+        }
+
+        return "{\"status\":\"Success\"}";
     }
 
 }
