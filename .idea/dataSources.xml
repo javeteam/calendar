@@ -10,5 +10,11 @@
         <property name="serverTimezone" value="Europe/Kiev" />
       </driver-properties>
     </data-source>
+    <data-source source="LOCAL" name="xtrf@aspectlocalization.com" uuid="490c9176-7a2e-49c8-9636-be5717748c40">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://aspectlocalization.com:5432/xtrf</jdbc-url>
+    </data-source>
   </component>
 </project>

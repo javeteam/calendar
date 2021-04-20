@@ -8,8 +8,9 @@
             <span>Workload report ${report.periodDisplayValue}</span>
             <span class="toggle_close_btn">×</span>
         </div>
-        <table class="reportPreview">
-            <thead>
+        <div class="content-area">
+            <table>
+                <thead>
                 <tr>
                     <th>Full Name</th>
                     <th>Division</th>
@@ -17,19 +18,20 @@
                     <th>Planned</th>
                     <th>Idle, %</th>
                 </tr>
-            </thead>
-            <tbody>
-            <c:forEach var="reportRow" items="${report.rows}">
-                <tr>
-                    <td>${reportRow.person.fullName}</td>
-                    <td>${reportRow.person.division.toString()}</td>
-                    <td>${reportRow.fact}</td>
-                    <td>${reportRow.planned}</td>
-                    <td>${reportRow.idle}</td>
-                </tr>
-            </c:forEach>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                <c:forEach var="reportRow" items="${report.rows}">
+                    <tr>
+                        <td>${reportRow.person.fullName}</td>
+                        <td>${reportRow.person.division.toString()}</td>
+                        <td>${reportRow.fact}</td>
+                        <td>${reportRow.planned}</td>
+                        <td>${reportRow.idle}</td>
+                    </tr>
+                </c:forEach>
+                </tbody>
+            </table>
+        </div>
         <div class="submit-section">
             <c:if test="${report.rows.size() > 0}">
                 <div class="option-block">

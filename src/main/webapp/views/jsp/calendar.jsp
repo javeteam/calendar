@@ -42,6 +42,10 @@
                 <img src="${pageContext.request.contextPath}/assets/icons/bar_chart-512.png"/>
                 <form hidden action="${pageContext.request.contextPath}/ajax/statisticParamsToggle" method="post"></form>
             </div>
+            <div class="img-button missing-projects">
+                <img src="${pageContext.request.contextPath}/assets/icons/missing.png"/>
+                <form hidden action="${pageContext.request.contextPath}/ajax/getXtrfMissingProjects" method="post"></form>
+            </div>
             <div class="img-button new-folder-button">
                 <img src="${pageContext.request.contextPath}/assets/icons/folder.png"/>
                 <form hidden action="${pageContext.request.contextPath}/ajax/newFolderToggle" method="post"></form>

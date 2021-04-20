@@ -2,7 +2,9 @@ package com.aspect.calendar.service;
 
 import com.aspect.calendar.config.WebSecurity;
 import com.aspect.calendar.dao.ProjectEntitiesDao;
+import com.aspect.calendar.dao.XtrfDao;
 import com.aspect.calendar.entity.AppConfig;
+import com.aspect.calendar.entity.calendar.Project;
 import com.aspect.calendar.entity.exceptions.FolderCreationException;
 import com.aspect.calendar.entity.exceptions.InvalidValueException;
 import com.aspect.calendar.entity.user.AppUser;
@@ -17,18 +19,21 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Service
 public class ProjectEntitiesService {
     private final ProjectEntitiesDao projectEntitiesDao;
+    private final XtrfDao xtrfDao;
     private final NotificationService notificationService;
     private final AppConfig config;
     private final Logger logger;
 
     @Autowired
-    public ProjectEntitiesService(ProjectEntitiesDao projectEntitiesDao, NotificationService notificationService, AppConfig config){
+    public ProjectEntitiesService(ProjectEntitiesDao projectEntitiesDao, XtrfDao xtrfDao, NotificationService notificationService, AppConfig config){
         this.projectEntitiesDao = projectEntitiesDao;
+        this.xtrfDao = xtrfDao;
         this.notificationService = notificationService;
         this.config = config;
         this.logger = LoggerFactory.getLogger(ProjectEntitiesService.class);
@@ -48,18 +53,21 @@ public class ProjectEntitiesService {
 
     public String createFolder(String clientName, String workflow, String sourceLanguage, String[] targetLanguages, String clientEmailSubject) throws FolderCreationException {
         clientEmailSubject = clientEmailSubject == null ? "" : clientEmailSubject.trim();
-        WebSecurity security = new WebSecurity();
-        AppUser user = security.getAuthenticatedUser();
-        if(user == null || user.getName() == null || user.getSurname() == null) throw new FolderCreationException("Application user not defined");
+        AppUser user = new WebSecurity().getAuthenticatedUser();
+        if(user == null || user.getId() == 0 || user.getName() == null || user.getSurname() == null) throw new FolderCreationException("Application user not defined");
         Path link;
 
         EntitiesHandler handler = new EntitiesHandler(this.projectEntitiesDao);
+        Project project = new Project();
         clientName = handler.validateClientName(clientName);
         workflow = handler.validateWorkflow(workflow);
         String sLanguage = handler.validateSourceLanguage(sourceLanguage);
         String tLanguages = handler.validateTargetLanguages(targetLanguages);
         String projectDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMM"));
         String projectNumber = this.projectEntitiesDao.getNextProjectNumber();
+        project.setName(projectDate + "_" + projectNumber + "_" + workflow + "_" + sLanguage + "-" + tLanguages);
+        project.setClientEmailSubject(clientEmailSubject);
+        project.setCreatedBy(user);
 
         Path projectPath = config.projectsRoot.resolve(projectDate).resolve(projectNumber);
         try{
@@ -70,7 +78,7 @@ public class ProjectEntitiesService {
             if(Files.notExists(link)) Files.createDirectories(link, config.UNIX_CHMOD_755);
             link = link.resolve(LocalDate.now().toString());
             if(Files.notExists(link)) Files.createDirectory(link, config.UNIX_CHMOD_775);
-            link = link.resolve(projectDate + "_" + projectNumber + "_" + workflow + "_" + sLanguage + "-" + tLanguages + "_" + clientName);
+            link = link.resolve(project.getName() + "_" + clientName);
             if(Files.notExists(link)) Files.createSymbolicLink(link, projectPath);
         } catch (IOException ex){
             String message = "Error during folders creation";
@@ -79,8 +87,10 @@ public class ProjectEntitiesService {
         }
         handler.saveNewEntities();
         handler.updateUsageCounter(clientName);
+        this.projectEntitiesDao.addProject(project);
+
         String message = projectNumber + " was allocated by " + user.getFullName() + (clientEmailSubject.isBlank() ? " " : " for " + clientEmailSubject);
-        notificationService.sendMessage(message);
+        this.notificationService.sendMessage(message);
 
         String url = config.pmRoot.relativize(link).toString();
         return "{\"status\": \"Success\", \"url\": \"" + url + "\", \"projectName\": \"" + projectDate + "_" + projectNumber + "\"}";
@@ -101,6 +111,27 @@ public class ProjectEntitiesService {
                 });
     }
 
+    public List<Project> getXtrfMissingProjects(){
+        List<Project> projectList = this.projectEntitiesDao.getXtrfMissingProjects();
+        if(projectList.isEmpty()) return new ArrayList<>();
+
+        List<Project> missingProjects = new ArrayList<>();
+        this.xtrfDao.setXtrfIds(projectList);
+
+        Iterator<Project> iterator = projectList.iterator();
+
+        while (iterator.hasNext()){
+            Project project = iterator.next();
+            if(project.getXtrfId() == null){
+                missingProjects.add(project);
+                iterator.remove();
+            }
+        }
+
+        this.projectEntitiesDao.updateProjects(projectList);
+
+        return missingProjects;
+    }
 
     private static class EntitiesHandler{
         private final ProjectEntitiesDao projectEntitiesDao;

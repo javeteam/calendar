@@ -302,4 +302,11 @@ public class MainController {
         } catch (IOException ignored){}
     }
 
+    @RequestMapping(value = {"/ajax/getXtrfMissingProjects"}, method = RequestMethod.POST)
+    public String getAbsentXtrfProjects(Model model){
+        model.addAttribute("missingProjects", this.projectEntitiesService.getXtrfMissingProjects());
+
+        return "xtrfMissingProjectsToggle";
+    }
+
 }

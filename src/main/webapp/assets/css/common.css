@@ -209,8 +209,16 @@ button:disabled:hover{
     right: 0;
 }
 
-.new-folder-button{
+.missing-projects{
     right: 50px;
+}
+
+.missing-projects img{
+    width: 26px !important;
+}
+
+.new-folder-button{
+    right: 100px;
 }
 
 .img-button:hover{
@@ -428,6 +436,17 @@ tbody tr{
     padding: 3px;
 }
 
+.toggle-content .content-area{
+    overflow-y: scroll;
+    max-height: 70vh;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.toggle-content .content-area::-webkit-scrollbar{
+    display: none;
+}
+
 .new-folder-toggle .form_row_rc{
     width: 60% !important;
 }
@@ -639,7 +658,7 @@ tbody tr{
     right: 0;
 }
 
-.reportPreview{
+.toggle-content table{
     margin: 10px auto 20px;
     width: calc(100% - 20px);
 }
@@ -719,7 +738,7 @@ tbody tr{
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    right: 150px;
+    right: 200px;
 }
 
 #calendarDate::-webkit-calendar-picker-indicator{

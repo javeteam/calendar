@@ -32,6 +32,12 @@
                 <span class="title">Item duration:</span>
                 <span class="form_row_rc">${item.formattedDuration} (${item.period})</span>
             </div>
+            <c:if test="${hasAdminRole || hasManagerRole}">
+                <div class="form_row">
+                    <span class="title">Provider:</span>
+                    <span class="form_row_rc">${item.providerName}</span>
+                </div>
+            </c:if>
             <div class="form_row">
                 <span class="title">Manager:</span>
                 <span class="form_row_rc" title="Created: ${item.createdByName} ${item.creationDate}<c:if test="${not empty item.modificationDate}">&#10;Modified: ${item.modifiedByName} ${item.modificationDate} </c:if>">${item.managerName}</span>
