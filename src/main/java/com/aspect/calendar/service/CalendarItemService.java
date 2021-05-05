@@ -2,26 +2,24 @@ package com.aspect.calendar.service;
 
 import com.aspect.calendar.dao.CalendarItemDao;
 import com.aspect.calendar.entity.calendar.CalendarItem;
+import com.aspect.calendar.entity.calendar.Group;
+import com.aspect.calendar.entity.enums.CalendarItemType;
 import com.aspect.calendar.entity.exceptions.CalendarItemProcessingException;
 import com.aspect.calendar.entity.user.AppUser;
 import com.aspect.calendar.entity.user.Person;
 import com.aspect.calendar.entity.calendar.UserDayCalendar;
 import com.aspect.calendar.entity.report.LoadReport;
-import com.aspect.calendar.form.CalendarItemForm;
 import com.aspect.calendar.form.SubmitItemForm;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.aspect.calendar.utils.CommonUtils.timeFormatter;
 
@@ -29,14 +27,12 @@ import static com.aspect.calendar.utils.CommonUtils.timeFormatter;
 public class CalendarItemService {
     private final CalendarItemDao calendarItemDao;
     private final UserDetailsServiceImpl userDetailsService;
-    private final ConversionService conversionService;
 
 
     @Autowired
-    CalendarItemService(CalendarItemDao calendarItemDao, UserDetailsServiceImpl userDetailsService, ConversionService conversionService){
+    CalendarItemService(CalendarItemDao calendarItemDao, UserDetailsServiceImpl userDetailsService){
         this.calendarItemDao = calendarItemDao;
         this.userDetailsService = userDetailsService;
-        this.conversionService = conversionService;
     }
 
     public UserDayCalendar getEmptyDayCalendar(LocalDate day){
@@ -49,8 +45,11 @@ public class CalendarItemService {
         dayCalendar.add(calendarTemplate);
         List<Person> activeProviders = this.userDetailsService.getAllActiveProviders();
         for(Person person : activeProviders){
-            dayCalendar.add(addItemsToUserCalendar(calendarTemplate, person, day, responsibleManager));
+            UserDayCalendar userCalendar = calendarTemplate.getCopy();
+            userCalendar.setUser(person);
+            dayCalendar.add(userCalendar);
         }
+        this.calendarItemDao.addItems(dayCalendar, day, responsibleManager);
 
         return dayCalendar;
     }
@@ -59,23 +58,16 @@ public class CalendarItemService {
         List<UserDayCalendar> dayCalendar = new ArrayList<>();
         UserDayCalendar calendarTemplate = this.getEmptyDayCalendar(day);
         dayCalendar.add(calendarTemplate);
-        dayCalendar.add(addItemsToUserCalendar(calendarTemplate, person, day, null));
+        UserDayCalendar userCalendar = calendarTemplate.getCopy();
+        userCalendar.setUser(person);
+        dayCalendar.add(userCalendar);
+        this.calendarItemDao.addItems(dayCalendar, day, null);
+
         return dayCalendar;
     }
 
-    private UserDayCalendar addItemsToUserCalendar(UserDayCalendar calendarTemplate, Person person, LocalDate day, Integer responsibleManager){
-        List<CalendarItem> userItems = this.calendarItemDao.getEmployeeDayItems(day, person.getId(), responsibleManager);
-        UserDayCalendar userCalendar = calendarTemplate.getCopy();
-        userCalendar.setUser(person);
-        userCalendar.setItems(userItems.stream().map(item -> this.conversionService.convert(item, CalendarItemForm.class)).collect(Collectors.toList()));
-        return userCalendar;
-    }
-
-
-    public CalendarItem getItemById(int id){
-        CalendarItem item = this.calendarItemDao.get(id);
-        if(item != null && item.getGroupId() > 0) defineGroupInfo(item);
-        return item;
+    public CalendarItem getItemById(long id){
+        return this.calendarItemDao.get(id);
     }
 
     public String getIntersectedItemsTitle(List<CalendarItem> itemsGroup){
@@ -108,14 +100,19 @@ public class CalendarItemService {
     }
 
 
-    public void saveGroup(List<CalendarItem> group){
-        if(group.size() == 1){
-            this.saveItem(group.get(0));
-        } else if(group.size() > 1){
-            int groupId = group.get(0).getGroupId();
-            if(groupId == 0) groupId = this.calendarItemDao.getNextGroupId();
-            for(CalendarItem item : group){
-                item.setGroupId(groupId);
+    public void saveItemsGroup(List<CalendarItem> itemsGroup){
+        if(!itemsGroup.isEmpty()){
+            Group group = itemsGroup.get(0).getGroup();
+            long groupId = group.getId();
+            if(group.getType() != CalendarItemType.PROJECT){
+                if(groupId <= 0){
+                    this.calendarItemDao.addGroup(group);
+                    groupId = group.getId();
+                } else this.calendarItemDao.updateGroup(group);
+
+            }
+            for(CalendarItem item : itemsGroup){
+                item.getGroup().setId(groupId);
                 saveItem(item);
             }
         }
@@ -126,12 +123,12 @@ public class CalendarItemService {
         else this.calendarItemDao.save(item);
     }
 
-    public boolean deleteGroup(int id){
-        return this.calendarItemDao.deleteGroup(id);
+    public void deleteGroupOfItems(int groupId, int itemId){
+        this.calendarItemDao.deleteGroupOfItems(groupId, itemId);
     }
 
-    public boolean deleteItem(int id){
-        return this.calendarItemDao.deleteItem(id);
+    public void deleteItem(int id){
+        this.calendarItemDao.delete(id);
     }
 
     public LoadReport getReport(LocalDate dateFrom, LocalDate dateTo, int providerId){
@@ -143,29 +140,6 @@ public class CalendarItemService {
         return this.calendarItemDao.getReport(dateFrom, dateTo, providers);
     }
 
-    private void defineGroupInfo(@NotNull CalendarItem item){
-        List<CalendarItem> group = this.calendarItemDao.getGroup(item.getGroupId());
-        // Group must contains at least two items
-        if(group.size() < 2){
-            item.setGroupId(0);
-        } else {
-            item.setGroupSize(group.size());
-            int groupDuration = 0;
-            for(int i = 0; i < group.size(); i++){
-                CalendarItem groupItem = group.get(i);
-                groupDuration += (groupItem.getDeadline().toSecondOfDay() - groupItem.getStartDate().toSecondOfDay());
-                if(groupItem.getId() == item.getId()) {
-                    item.setPositionInGroup(i+1);
-                }
-                // First and last items of group
-                if(i == 0) item.setGroupStartDate(groupItem.getItemDate().atTime(groupItem.getStartDate()));
-                else if(i == group.size() -1 ) item.setGroupDeadline(groupItem.getItemDate().atTime(groupItem.getDeadline()));
-            }
-            item.setGroupDuration(groupDuration);
-        }
-
-    }
-
     public String getItemsAsCSV(LocalDate dateFrom, LocalDate dateTo, int providerId){
         return this.calendarItemDao.getItemsAsCSV(dateFrom, dateTo, providerId);
     }
@@ -175,8 +149,7 @@ public class CalendarItemService {
         if(startDateTime.isBefore(LocalDateTime.now()) && ! authenticatedUser.hasRole("ADMIN")){
             throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to create items in the past" + "\"}", HttpStatus.FORBIDDEN);
         }
-
-        if(!form.isValid()) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + form.getErrorMessage() + "\"}", HttpStatus.BAD_REQUEST);
+        form.checkValidity();
 
         List<List<CalendarItem>> groups = form.split();
 
@@ -192,14 +165,14 @@ public class CalendarItemService {
         if(sb.toString().length() > 0) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Creation failed! New item intersect: " + sb.toString() + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
 
         for (List<CalendarItem> group : groups){
-            saveGroup(group);
+            saveItemsGroup(group);
         }
 
         return "{\"status\":\"Success\",\"calendarDate\":\"" + startDateTime.toLocalDate() + "\"}";
     }
 
     public String editItem(SubmitItemForm form, AppUser authenticatedUser) throws CalendarItemProcessingException{
-        if(!form.isValid()) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + form.getErrorMessage() + "\"}", HttpStatus.BAD_REQUEST);
+        form.checkValidity();
 
         CalendarItem item = form.convertToCalendarItem();
         if(item == null) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Event start and deadline date must be the same. To extend item use split function" + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -228,7 +201,20 @@ public class CalendarItemService {
         String intersectedItems = getIntersectedItemsTitle(item);
         if(intersectedItems != null) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Save failed! New item intersect: " + intersectedItems + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
 
+        Group itemGroup = item.getGroup();
+
+        // If item type was changed from project to another one we have to create new group for it
+        if(itemGroup.getType() != CalendarItemType.PROJECT){
+            CalendarItem existingItem = this.calendarItemDao.get(item.getId());
+            if(existingItem.getGroup().getType() == CalendarItemType.PROJECT) {
+                itemGroup.setCreatedBy(authenticatedUser);
+                this.calendarItemDao.addGroup(itemGroup);
+            }
+            else this.calendarItemDao.updateGroup(item.getGroup());
+        }
+
         saveItem(item);
+
 
         return "{\"status\":\"Success\",\"calendarDate\":\"" + item.getItemDate() + "\"}";
     }
@@ -246,7 +232,7 @@ public class CalendarItemService {
             group.add(item);
             group.add(newItem);
 
-            saveGroup(group);
+            saveItemsGroup(group);
         }
 
         return "{\"status\":\"Success\"}";

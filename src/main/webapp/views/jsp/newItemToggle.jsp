@@ -3,6 +3,7 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <jsp:useBean id="security" class="com.aspect.calendar.config.WebSecurity"/>
 <c:set var="hasAdminRole" value="${security.hasRole('ADMIN')}"/>
+<%@ page import="com.aspect.calendar.entity.enums.CalendarItemType" %>
 
 
 <div class="toggle hidden">
@@ -11,11 +12,17 @@
             <span>Create item</span>
             <span class="toggle_close_btn">×</span>
         </div>
-        <form class="item-form" id="addNewItem" action="${pageContext.request.contextPath}/ajax/addNewItem" method="post">
+        <form class="item-form j-calendar-item-form" id="addNewItem" action="${pageContext.request.contextPath}/ajax/addNewItem" method="post">
             <div class="form_row">
+                <label class="title" for="groupId">Project</label>
+                <div class="form_row_rc">
+                    <select id="groupId" name="groupId" data-url="${pageContext.request.contextPath}/ajax/projectList" required></select>
+                </div>
+            </div>
+            <div class="form_row hidden">
                 <label class="title" for="title">Title</label>
                 <div class="form_row_rc">
-                    <input id="title" type="text" name="title" required>
+                    <input id="title" type="text" name="title" required disabled>
                 </div>
             </div>
             <div class="form_row">
@@ -32,7 +39,6 @@
                         <c:forEach var="manager" items="${managers}">
                             <option ${loggedUser.id == manager.id ? 'selected' : ''} value="${manager.id}">${manager.fullName}</option>
                         </c:forEach>
-
                     </select>
                 </div>
             </div>
@@ -40,10 +46,9 @@
                 <label class="title" for="type">Type</label>
                 <div class="form_row_rc">
                     <select id="type" name="type">
-                        <option value="CONFIRMED">Confirmed</option>
-                        <option value="POTENTIAL">Potential</option>
-                        <option value="ABSENCE">Absence</option>
-                        <option value="NOT_AVAILABLE">Not Available</option>
+                        <c:forEach var="type" items="${CalendarItemType.values()}">
+                            <option value="${type}">${type.title}</option>
+                        </c:forEach>
                     </select>
                 </div>
             </div>

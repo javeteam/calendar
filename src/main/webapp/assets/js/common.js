@@ -91,12 +91,43 @@ $(document).on('click', '.j_cell', function (e) {
                 togglePage = $(togglePage).find('.toggle');
                 $('body').append(togglePage);
                 $('.toggle').fadeIn(150);
+                defineProjectSelect();
             })
     }
 })
 
-//Validate new item form
-$(document).on('input', '.item-form .form_row .form_row_rc input, .item-form .form_row .form_row_rc select, .item-form .form_row .form_row_rc textarea', function () {
+function defineProjectSelect(){
+    const select = $('#groupId');
+    select.select2({
+        width: '100%',
+        ajax: {
+            url: select.data('url'),
+            dataType: 'json',
+            delay: 150,
+            data: function (params) {
+                return {
+                    name: params.term // search term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: $.map(data.items, function (item) {
+                        return {
+                            text: item.name,
+                            id: item.id
+                        }
+                    })
+                };
+            },
+            cache: true
+        },
+        placeholder: 'Search for a repository',
+        minimumInputLength: 3
+    });
+}
+
+// Validate new item form
+$(document).on('input, change', '.item-form .form_row .form_row_rc input, .item-form .form_row .form_row_rc select, .item-form .form_row .form_row_rc textarea', function () {
     const form = $(this).closest('form')
     const button = form.closest('.toggle-content').find('.toggle-submit-btn')
     $('#error-section').fadeOut(300);
@@ -105,7 +136,19 @@ $(document).on('input', '.item-form .form_row .form_row_rc input, .item-form .fo
     } else {
         button.prop('disabled', true);
     }
+})
 
+// Switch between projectId and title input
+$(document).on('change', '.j-calendar-item-form #type', function () {
+    if(this.value === 'PROJECT'){
+        $('#groupId').attr('disabled', false).closest('.form_row').removeClass('hidden');
+        $('#title').attr('disabled', true).closest('.form_row').addClass('hidden');
+        $('#editItem input[name="groupId"][type="hidden"]').attr('disabled', true);
+    } else {
+        $('#groupId').attr('disabled', true).closest('.form_row').addClass('hidden');
+        $('#title').attr('disabled', false).closest('.form_row').removeClass('hidden');
+        $('#editItem input[name="groupId"][type="hidden"]').attr('disabled', false);
+    }
 })
 
 //Submit new item form
@@ -223,6 +266,7 @@ $(document).on('click', '.option .edit', function () {
             let toggle = new DOMParser().parseFromString(response, 'text/html');
             toggle = $(toggle).find('.toggle');
             $('body').append(toggle);
+            defineProjectSelect();
         })
 })
 

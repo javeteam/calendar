@@ -133,6 +133,14 @@ public class ProjectEntitiesService {
         return missingProjects;
     }
 
+    public List<Project> getRecentProjects(){
+        return this.projectEntitiesDao.getRecentProjects();
+    }
+
+    public List<Project> getProjectsByName(String name){
+        return this.projectEntitiesDao.getProjectsByName(name);
+    }
+
     private static class EntitiesHandler{
         private final ProjectEntitiesDao projectEntitiesDao;
         private String clientName;

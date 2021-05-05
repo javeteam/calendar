@@ -1,25 +1,21 @@
 package com.aspect.calendar.entity.calendar;
 
-import com.aspect.calendar.entity.user.Person;
+import com.aspect.calendar.entity.enums.CalendarItemType;
 
-import java.time.LocalDateTime;
-
-public class Project {
-    private long id;
+public class Project extends Group {
     private Long xtrfId;
-    private String name;
     private String clientEmailSubject;
     private boolean fewTranslatorsAllowed;
     private boolean fewQCAllowed;
-    private LocalDateTime creationDate;
-    private Person createdBy;
+    private boolean hasCollision;
 
-    public long getId() {
-        return id;
+    public Project(){
+        setType(CalendarItemType.PROJECT);
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public String getShortName(){
+        if(getName() != null && getName().matches("^\\d{4}_\\d{4}.*")) return getName().substring(5,9) + '_' + getName().substring(0,4);
+        else return getName();
     }
 
     public Long getXtrfId() {
@@ -28,14 +24,6 @@ public class Project {
 
     public void setXtrfId(Long xtrfId) {
         this.xtrfId = xtrfId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getClientEmailSubject() {
@@ -62,19 +50,11 @@ public class Project {
         this.fewQCAllowed = fewQCAllowed;
     }
 
-    public LocalDateTime getCreationDate() {
-        return creationDate;
+    public boolean isHasCollision() {
+        return hasCollision;
     }
 
-    public void setCreationDate(LocalDateTime creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public Person getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Person createdBy) {
-        this.createdBy = createdBy;
+    public void setHasCollision(boolean hasCollision) {
+        this.hasCollision = hasCollision;
     }
 }

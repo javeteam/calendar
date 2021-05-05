@@ -11,6 +11,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -32,6 +34,7 @@ import java.util.Map;
 @Transactional
 public class ProjectEntitiesDao extends JdbcDaoSupport {
     private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
     private final SimpleJdbcCall jdbcCall;
     private final Logger logger = LoggerFactory.getLogger(ProjectEntitiesDao.class);
 
@@ -39,6 +42,7 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
     public ProjectEntitiesDao(DataSource dataSource){
         this.setDataSource(dataSource);
         this.jdbcTemplate = this.getJdbcTemplate();
+        this.namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
         this.jdbcCall = new SimpleJdbcCall(dataSource).withProcedureName("getProjectNumber");
     }
 
@@ -107,23 +111,25 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
     }
 
     public void addProject(Project project){
-        final String request = "INSERT INTO project (name, client_email_subject, creation_date, created_by) VALUES (?, ?, ?, ?)";
+        final String request = "INSERT INTO items_group (name, type, client_email_subject, creation_date, created_by) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         this.jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(request, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, project.getName());
-            ps.setString(2, project.getClientEmailSubject());
-            ps.setString(3, LocalDateTime.now().format(CommonUtils.sqlDTFormatter));
-            ps.setInt(4, project.getCreatedBy().getId());
+            ps.setString(2, project.getType().name());
+            ps.setString(3, project.getClientEmailSubject());
+            ps.setString(4, LocalDateTime.now().format(CommonUtils.sqlDTFormatter));
+            ps.setInt(5, project.getCreatedBy().getId());
 
             return ps;
         }, keyHolder);
+        if(keyHolder.getKey() != null) project.setId(keyHolder.getKey().longValue());
     }
 
     public List<Project> getXtrfMissingProjects(){
-        final String request = "SELECT project.*, admin.name as pm_name, admin.surname AS pm_surname FROM project " +
-                "LEFT JOIN admin ON project.created_by = admin.id " +
-                "WHERE xtrf_id IS NULL " +
+        final String request = "SELECT items_group.*, admin.name as pm_name, admin.surname AS pm_surname FROM items_group " +
+                "LEFT JOIN admin ON items_group.created_by = admin.id " +
+                "WHERE type = 'PROJECT' AND xtrf_id IS NULL " +
                 "ORDER BY pm_surname, name";
         try{
             return this.jdbcTemplate.query(request, new ProjectRowMapper());
@@ -133,7 +139,7 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
     }
 
     public void updateProjects(List<Project> projectList){
-        final String request = "UPDATE project SET xtrf_id = ?, few_translators_allowed = ?, few_qc_allowed = ? WHERE id = ?";
+        final String request = "UPDATE items_group SET xtrf_id = ?, few_translators_allowed = ?, few_qc_allowed = ? WHERE id = ?";
         this.jdbcTemplate.batchUpdate(request, new BatchPreparedStatementSetter() {
             @Override
             public void setValues(PreparedStatement ps, int i) throws SQLException {
@@ -149,6 +155,38 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
                 return projectList.size();
             }
         });
+    }
+
+    public List<Project> getRecentProjects() {
+        final String request = "SELECT items_group.*, admin.name as pm_name, admin.surname AS pm_surname FROM items_group " +
+                "LEFT JOIN admin ON items_group.created_by = admin.id " +
+                "WHERE creation_date > '2021-04-01' AND items_group.type = 'PROJECT' " +
+                "ORDER BY creation_date";
+        try {
+            return this.jdbcTemplate.query(request, new ProjectRowMapper());
+        } catch (EmptyResultDataAccessException ignored) {
+            return new ArrayList<>();
+        }
+    }
+
+    public List<Project> getProjectsByName(String name){
+        final String request = "SELECT id, name FROM items_group " +
+                "WHERE type = 'PROJECT' AND name LIKE :name " +
+                "ORDER BY creation_date DESC LIMIT 100";
+
+        MapSqlParameterSource params = new MapSqlParameterSource();
+        params.addValue("name", "%" + name + "%");
+        try {
+            return this.namedParameterJdbcTemplate.query(request, params, (rs, i) -> {
+                Project project = new Project();
+                project.setId(rs.getLong("id"));
+                project.setName(rs.getString("name"));
+
+                return project;
+            });
+        } catch (EmptyResultDataAccessException ignored) {
+            return new ArrayList<>();
+        }
     }
 
     private static class ProjectRowMapper implements RowMapper<Project> {

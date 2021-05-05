@@ -381,8 +381,12 @@ tbody tr{
     font-weight: bold;
 }
 
-.confirmed{
+.project{
     background: rgba(255,165,0, 0.8);
+}
+
+.job{
+    background: rgba(255,215,0, 0.8);
 }
 
 .potential{
@@ -397,8 +401,13 @@ tbody tr{
     background: rgba(224,17,95, 0.8);
 }
 
+.invalid{
+    background: rgba(255,0,0, 1);
+}
+
 .highlighted{
-    background: rgba(255,0,0, 0.3);
+    background: #181818;
+    color: #eee;
 }
 
 .cell:hover{

@@ -1,5 +1,6 @@
 package com.aspect.calendar.controllers;
 
+import com.aspect.calendar.entity.calendar.Project;
 import com.aspect.calendar.entity.exceptions.AuthenticationRequiredException;
 import com.aspect.calendar.entity.exceptions.CalendarItemProcessingException;
 import com.aspect.calendar.entity.exceptions.InvalidValueException;
@@ -8,11 +9,13 @@ import com.aspect.calendar.entity.exceptions.FolderCreationException;
 import com.aspect.calendar.entity.calendar.CalendarItem;
 import com.aspect.calendar.entity.calendar.UserDayCalendar;
 import com.aspect.calendar.entity.report.LoadReport;
-import com.aspect.calendar.form.CalendarItemForm;
 import com.aspect.calendar.form.SubmitItemForm;
 import com.aspect.calendar.service.CalendarItemService;
 import com.aspect.calendar.service.ProjectEntitiesService;
 import com.aspect.calendar.service.UserDetailsServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -131,12 +134,26 @@ public class MainController {
         model.addAttribute("loggedUser", this.getAuthenticatedUser());
         model.addAttribute("provider", this.userDetailsService.getPersonById(providerId));
         model.addAttribute("managers", this.userDetailsService.getAllActiveManagers());
+        model.addAttribute("projects", this.projectEntitiesService.getRecentProjects());
         model.addAttribute("itemStartHour", itemStartHour);
         model.addAttribute("itemStartMinute", itemStartMinute);
         model.addAttribute("itemDate", itemDate);
         model.addAttribute("currentDate", LocalDate.now());
 
         return "newItemToggle";
+    }
+
+    @RequestMapping(value = {"/ajax/projectList"}, method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String getProjectList(String name) throws JsonProcessingException {
+        List<Project> projects = this.projectEntitiesService.getProjectsByName(name);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(MapperFeature.AUTO_DETECT_CREATORS,
+                MapperFeature.AUTO_DETECT_FIELDS,
+                MapperFeature.AUTO_DETECT_GETTERS,
+                MapperFeature.AUTO_DETECT_IS_GETTERS);
+
+        return "{\"items\":" + mapper.writeValueAsString(projects) + "}";
     }
 
     @RequestMapping(value = {"/ajax/addNewItem"}, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -161,7 +178,7 @@ public class MainController {
 
         LocalTime maxSplitTime = item.getDeadline().minusMinutes(10);
 
-        model.addAttribute("item", this.conversionService.convert(item, CalendarItemForm.class));
+        model.addAttribute("item", item);
         model.addAttribute("minSplitTime", minSplitTime);
         model.addAttribute("maxSplitTime", maxSplitTime);
         return "itemInfoToggle";
@@ -172,7 +189,7 @@ public class MainController {
         CalendarItem item = this.calendarItemService.getItemById(itemId);
 
         model.addAttribute("managers", this.userDetailsService.getAllActiveManagers());
-        model.addAttribute("item", this.conversionService.convert(item, CalendarItemForm.class));
+        model.addAttribute("item", item);
         return "editItemToggle";
     }
 
@@ -196,16 +213,10 @@ public class MainController {
     @RequestMapping(value = {"/ajax/delete"}, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public String delete(@RequestParam ("itemId") int itemId, @RequestParam(value = "groupId", required = false) Integer groupId, HttpServletResponse response) {
-        CalendarItem item = this.calendarItemService.getItemById(itemId);
-        boolean success = false;
-        if(groupId != null) success = this.calendarItemService.deleteGroup(groupId);
-        else if(item != null) success = this.calendarItemService.deleteItem(itemId);
+        if(groupId != null) this.calendarItemService.deleteGroupOfItems(groupId, itemId);
+        else this.calendarItemService.deleteItem(itemId);
 
-        if(success) return "{\"status\":\"Success\"}";
-        else{
-            response.setStatus(400);
-            return "{\"status\":\"Error\",\"message\":\"Failed to delete item or group\"}";
-        }
+        return "{\"status\":\"Success\"}";
     }
 
     @RequestMapping(value = {"/ajax/statisticParamsToggle"}, method = RequestMethod.POST)

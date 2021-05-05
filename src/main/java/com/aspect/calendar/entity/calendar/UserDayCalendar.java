@@ -1,9 +1,9 @@
 package com.aspect.calendar.entity.calendar;
 
 import com.aspect.calendar.entity.user.Person;
-import com.aspect.calendar.form.CalendarItemForm;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class UserDayCalendar {
@@ -17,8 +17,8 @@ public class UserDayCalendar {
     private final List<CalendarCell> calendarCells = new ArrayList<>();
     private int dayStart = WORKING_DAY_START_TP;
     private int dayEnd = WORKING_DAY_END_TP;
-    private int plannedLoad;
-    private int factLoad;
+    private int plannedLoad = 28800;
+    private int factLoad = 0;
 
 
     public UserDayCalendar(Integer startTP, Integer endTP){
@@ -60,47 +60,27 @@ public class UserDayCalendar {
         return Math.round(efficiency * 100) / 100f + "%";
     }
 
-    private void setEfficiencyUnits() {
-        this.plannedLoad = 28800;
-        this.factLoad = 0;
+    public void addItem(CalendarItem item){
+        Iterator<CalendarCell> iterator = calendarCells.iterator();
 
-        for(CalendarCell cell : calendarCells){
-            for(CalendarItemForm item: cell.getItems()){
-                switch(item.getType()) {
-                    case POTENTIAL:
-                    case CONFIRMED:
-                        this.factLoad += item.getDuration();
-                        break;
-                    case ABSENCE:
-                        this.plannedLoad -= item.getDuration();
-                }
+        while (iterator.hasNext()){
+            CalendarCell cell = iterator.next();
+            int itemStartTP = item.getStartDate().toSecondOfDay();
+            if((itemStartTP >= cell.getStartTP() && itemStartTP < cell.getStartTP() + cellDuration) || !iterator.hasNext()){
+                cell.addItem(item);
+                break;
             }
         }
-    }
 
-    public void setItems(List<CalendarItemForm> calendarItems){
-        int cellNumber = 0;
-        for(CalendarItemForm item : calendarItems){
-            int itemTP = item.getStartTP();
-            for( ;cellNumber < calendarCells.size(); cellNumber++){
-                int sellTP = calendarCells.get(cellNumber).getStartTP();
-                if(itemTP == sellTP){
-                    calendarCells.get(cellNumber).addItem(item);
-                    break;
-                } else if(itemTP > sellTP) {
-                    // this sell is final
-                    if(cellNumber == calendarCells.size() -1){
-                        calendarCells.get(cellNumber).addItem(item);
-                        break;
-                    } else if(itemTP < sellTP + cellDuration){
-                        calendarCells.get(cellNumber).addItem(item);
-                        break;
-                    }
-                }
-            }
+        switch(item.getGroup().getType()) {
+            case POTENTIAL:
+            case PROJECT:
+            case JOB:
+                this.factLoad += item.getDuration();
+                break;
+            case ABSENCE:
+                this.plannedLoad -= item.getDuration();
         }
-        this.setEfficiencyUnits();
     }
-
 
 }

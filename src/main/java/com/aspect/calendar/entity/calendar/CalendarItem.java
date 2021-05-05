@@ -2,51 +2,49 @@ package com.aspect.calendar.entity.calendar;
 
 import com.aspect.calendar.entity.user.Person;
 import com.aspect.calendar.entity.enums.CalendarItemType;
+import com.aspect.calendar.utils.CommonUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 public class CalendarItem {
-    private int id;
+    private long id;
     private Person createdBy = new Person();
     private Person modifiedBy = new Person();
     private Person manager = new Person();
     private Person provider = new Person();
-    private LocalDateTime creationDate = LocalDateTime.now();
+    private LocalDateTime creationDate;
     private LocalDateTime modificationDate;
     private LocalDate itemDate;
     private LocalTime startDate;
     private LocalTime deadline;
-    private CalendarItemType type;
-    private String title;
     private String description;
-    private int groupId;
+    private Group group;
     private int positionInGroup;
-    private int groupSize;
     private int groupDuration;
-    private LocalDateTime groupStartDate;
-    private LocalDateTime groupDeadline;
 
-    public CalendarItem(){}
+    public CalendarItem(){
+        this.creationDate = LocalDateTime.now();
+        this.group = new Project();
+    }
 
     public CalendarItem(CalendarItem item){
+        this.creationDate = LocalDateTime.now();
         this.createdBy = item.getCreatedBy();
         this.provider = item.getProvider();
         this.manager = item.getManager();
         this.itemDate = item.getItemDate();
         this.startDate = item.getStartDate();
         this.deadline = item.getDeadline();
-        this.type = item.getType();
-        this.title = item.getTitle();
-        this.groupId = item.getGroupId();
+        this.group = item.getGroup();
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -56,6 +54,7 @@ public class CalendarItem {
 
     public void setCreatedBy(Person createdBy) {
         this.createdBy = createdBy;
+        this.group.setCreatedBy(createdBy);
     }
 
     public Person getModifiedBy() {
@@ -130,22 +129,6 @@ public class CalendarItem {
         this.deadline = deadline;
     }
 
-    public CalendarItemType getType() {
-        return type;
-    }
-
-    public void setType(CalendarItemType type) {
-        this.type = type;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -154,12 +137,12 @@ public class CalendarItem {
         this.description = description;
     }
 
-    public int getGroupId() {
-        return groupId;
+    public Group getGroup() {
+        return group;
     }
 
-    public void setGroupId(int groupId) {
-        this.groupId = groupId;
+    public void setGroup(Group group) {
+        this.group = group;
     }
 
     public int getPositionInGroup() {
@@ -170,14 +153,6 @@ public class CalendarItem {
         this.positionInGroup = positionInGroup;
     }
 
-    public int getGroupSize() {
-        return groupSize;
-    }
-
-    public void setGroupSize(int groupSize) {
-        this.groupSize = groupSize;
-    }
-
     public int getGroupDuration() {
         return groupDuration;
     }
@@ -186,19 +161,25 @@ public class CalendarItem {
         this.groupDuration = groupDuration;
     }
 
-    public LocalDateTime getGroupStartDate() {
-        return groupStartDate;
+    public int getDuration(){
+        return deadline.toSecondOfDay() - startDate.toSecondOfDay();
     }
 
-    public void setGroupStartDate(LocalDateTime groupStartDate) {
-        this.groupStartDate = groupStartDate;
+    public boolean startDatePassed(){
+        return LocalDateTime.now().minusMinutes(15).isAfter(itemDate.atTime(startDate));
     }
 
-    public LocalDateTime getGroupDeadline() {
-        return groupDeadline;
+    public boolean deadlinePassed(){
+        return LocalDateTime.now().minusMinutes(15).isAfter(itemDate.atTime(deadline));
     }
 
-    public void setGroupDeadline(LocalDateTime groupDeadline) {
-        this.groupDeadline = groupDeadline;
+    public String getPeriod(){
+        return startDate + " - " + deadline;
     }
+
+    public String getFormattedDuration(){
+        return CommonUtils.formatDuration(deadline.toSecondOfDay() - startDate.toSecondOfDay());
+    }
+
+
 }

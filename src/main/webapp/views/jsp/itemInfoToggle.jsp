@@ -11,21 +11,21 @@
 <div class="toggle toggle-item-info">
     <div class="toggle-content">
         <div class="toggle-content-header">
-            <span class="item-title-info">${item.title}</span>
+            <span class="item-title-info">${item.group.name}</span>
             <span class="toggle_close_btn">×</span>
         </div>
         <div class="item-info-section">
             <div class="start_and_finish">
-                <span>${item.groupPeriod}</span>
+                <span>${item.group.period}</span>
             </div>
-            <c:if test="${item.groupId > 0}">
+            <c:if test="${item.group.size > 1}">
                 <div class="form_row">
                     <span class="title">Group:</span>
-                    <span class="form_row_rc">Item ${item.positionInGroup} of ${item.groupSize}</span>
+                    <span class="form_row_rc">Item ${item.positionInGroup} of ${item.group.size}</span>
                 </div>
                 <div class="form_row">
                     <span class="title">Group duration:</span>
-                    <span class="form_row_rc">${item.formattedGroupDuration}</span>
+                    <span class="form_row_rc">${item.group.formattedDuration}</span>
                 </div>
             </c:if>
             <div class="form_row">
@@ -35,12 +35,12 @@
             <c:if test="${hasAdminRole || hasManagerRole}">
                 <div class="form_row">
                     <span class="title">Provider:</span>
-                    <span class="form_row_rc">${item.providerName}</span>
+                    <span class="form_row_rc">${item.provider.fullName}</span>
                 </div>
             </c:if>
             <div class="form_row">
                 <span class="title">Manager:</span>
-                <span class="form_row_rc" title="Created: ${item.createdByName} ${item.creationDate}<c:if test="${not empty item.modificationDate}">&#10;Modified: ${item.modifiedByName} ${item.modificationDate} </c:if>">${item.managerName}</span>
+                <span class="form_row_rc" title="Created: ${item.createdBy.fullName} ${item.creationDate}<c:if test="${not empty item.modificationDate}">&#10;Modified: ${item.modifiedBy.fullName} ${item.modificationDate} </c:if>">${item.manager.fullName}</span>
             </div>
             <div class="form_row">
                 <span class="item-description">${fn:replace(item.description, newLineChar, "<br>")}</span>
@@ -49,7 +49,7 @@
         <c:if test="${hasManagerRole || hasAdminRole}">
             <div class="submit-section">
                 <div class="option-block">
-                    <c:if test="${hasAdminRole || !item.deadlinePassed}">
+                    <c:if test="${hasAdminRole || !item.deadlinePassed()}">
                         <div class="option">
                             <a class="edit">Edit</a>
                             <form id="editForm" hidden action="${pageContext.request.contextPath}/ajax/editItemToggle" method="post">
@@ -71,15 +71,16 @@
                             </div>
                         </c:if>
                     </c:if>
-                    <c:if test="${hasAdminRole || !item.startDatePassed}">
+                    <c:if test="${hasAdminRole || !item.startDatePassed()}">
                         <div class="option">
                             <a class="delete">Delete</a>
                             <form id="deleteForm" hidden action="${pageContext.request.contextPath}/ajax/delete" method="post">
                                 <input type="hidden" name="itemId" value="${item.id}">
-                                <input type="hidden" name="groupId" value="${item.groupId}">
+                                <input type="hidden" name="groupId" value="${item.group.id}">
+                                <input type="hidden" name="providerId" value="${item.provider.id}">
                             </form>
                         </div>
-                        <c:if test="${item.groupId > 0 && (hasAdminRole || !item.groupStartDatePassed)}">
+                        <c:if test="${item.group.size > 1 && (hasAdminRole || !item.group.startDatePassed())}">
                             <div id="deleteOptions" class="option-details hidden">
                                 <a class="text-btn" id="delItem">Delete item</a>
                                 <a class="text-btn" id="delGroup">Delete group</a>

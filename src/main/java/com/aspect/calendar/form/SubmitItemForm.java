@@ -1,10 +1,12 @@
 package com.aspect.calendar.form;
 
 import com.aspect.calendar.entity.calendar.CalendarItem;
+import com.aspect.calendar.entity.exceptions.CalendarItemProcessingException;
 import com.aspect.calendar.entity.user.Person;
 import com.aspect.calendar.entity.calendar.UserDayCalendar;
 import com.aspect.calendar.entity.enums.CalendarItemType;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 
 import javax.validation.constraints.NotNull;
 import java.time.DayOfWeek;
@@ -17,7 +19,7 @@ import java.util.List;
 
 public class SubmitItemForm {
     private int id;
-    private int groupId;
+    private long groupId;
     private String title;
     private String description;
     private int providerId;
@@ -44,11 +46,11 @@ public class SubmitItemForm {
         this.id = id;
     }
 
-    public int getGroupId() {
+    public long getGroupId() {
         return groupId;
     }
 
-    public void setGroupId(int groupId) {
+    public void setGroupId(long groupId) {
         this.groupId = groupId;
     }
 
@@ -189,32 +191,28 @@ public class SubmitItemForm {
         else return endDate.atTime(endDateHour, endDateMinute);
     }
 
-    public boolean isValid(){
-        return this.datesValid()
-                && this.isLongEnough()
-                && !this.isTooLong()
-                && !this.startDateTooLate()
-                && !this.deadlineTooEarly()
-                && !repetitionPeriodIncorrect()
-                && repeatedItemLongEnough();
+    public void checkValidity() throws CalendarItemProcessingException{
+        if(!this.datesValid()){
+            throwException("Deadline can't be less or equal to start date");
+        } else if(type == CalendarItemType.PROJECT && groupId == 0){
+            throwException("Project must exist");
+        } else if(!this.isLongEnough()){
+            throwException("Item can't be shorter then 5 minutes");
+        } else if(this.isTooLong()){
+            throwException("Item created by duration can't finish after 23:55");
+        } else if(this.startDateTooLate()){
+            throwException("Item can't start after 22:00");
+        } else if(this.deadlineTooEarly()){
+            throwException("Item can't end before 07:00");
+        } else if(this.repetitionPeriodIncorrect()){
+            throwException("Repetition period can't be longer then 31 day");
+        } else if(!this.repeatedItemLongEnough()){
+            throwException("Repeated items can't be shorter then 10 minutes");
+        }
     }
 
-    public String getErrorMessage(){
-        if(!this.datesValid()){
-            return "Deadline can't be less or equal to start date";
-        } else if(!this.isLongEnough()){
-            return "Item can't be shorter then 5 minutes";
-        } else if(this.isTooLong()){
-            return "Item created by duration can't finish after 23:55";
-        } else if(this.startDateTooLate()){
-            return "Item can't start after 22:00";
-        } else if(this.deadlineTooEarly()){
-            return "Item can't end before 07:00";
-        } else if(this.repetitionPeriodIncorrect()){
-            return "Repetition period can't be longer then 31 day";
-        } else if(!this.repeatedItemLongEnough()){
-            return "Repeated items can't be shorter then 10 minutes";
-        } else  return "";
+    private void throwException(String message) throws CalendarItemProcessingException {
+        throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + message + "\"}", HttpStatus.BAD_REQUEST);
     }
 
     private boolean datesValid(){
@@ -222,7 +220,7 @@ public class SubmitItemForm {
     }
 
     private boolean isLongEnough(){
-        int durationInMinutes = 0;
+        int durationInMinutes;
         if(endDate == null) durationInMinutes = durationHours * 60 + durationMinutes;
         else durationInMinutes =  (int)ChronoUnit.MINUTES.between(getStartDateTime(), getEndDateTime());
 
@@ -261,15 +259,15 @@ public class SubmitItemForm {
     public CalendarItem convertToCalendarItem(){
         CalendarItem item = new CalendarItem();
         item.setId(this.id);
-        item.setGroupId(this.groupId);
         item.setProvider(new Person(this.providerId));
         item.setManager(new Person(this.managerId));
-        item.setTitle(this.title);
         item.setDescription(this.description);
-        item.setType(this.type);
         item.setItemDate(this.startDate);
         item.setStartDate(LocalTime.of(startDateHour, startDateMinute));
         item.setDeadline(getEndDateTime().toLocalTime());
+        item.getGroup().setId(this.groupId);
+        item.getGroup().setName(this.title);
+        item.getGroup().setType(this.type);
 
         return item;
     }
@@ -278,6 +276,7 @@ public class SubmitItemForm {
         SubmitItemForm form = new SubmitItemForm();
         form.setProviderId(this.providerId);
         form.setManagerId(this.managerId);
+        form.setGroupId(this.groupId);
         form.setTitle(this.title);
         form.setDescription(this.description);
         form.setType(this.type);
@@ -297,7 +296,6 @@ public class SubmitItemForm {
             CalendarItem item = this.convertToCalendarItem();
             if(excludeLunchtime) groupOfItems.addAll(this.removeLunch(item, true, true, true));
             else groupOfItems.add(item);
-
         } else if(repetitionDays == null){ // Not repetition, just an item
             List<CalendarItem> itemsToHandle = this.splitIntoDays();
             if(excludeLunchtime){

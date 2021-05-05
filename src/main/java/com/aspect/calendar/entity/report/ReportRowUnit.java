@@ -5,7 +5,8 @@ import java.time.LocalDate;
 public class ReportRowUnit {
     private final LocalDate date;
     private final int EXPECTED_LOAD = 28800;
-    private int confirmed;
+    private int project;
+    private int job;
     private int potential;
     private int absence;
 
@@ -17,8 +18,12 @@ public class ReportRowUnit {
         return date;
     }
 
-    public void setConfirmed(int confirmed) {
-        this.confirmed = confirmed;
+    public void setProject(int project) {
+        this.project = project;
+    }
+
+    public void setJob(int job) {
+        this.job = job;
     }
 
     public void setPotential(int potential) {
@@ -30,7 +35,7 @@ public class ReportRowUnit {
     }
 
     public int getLoad(){
-        return confirmed + potential;
+        return project + job + potential;
     }
 
     public String getFormattedLoad(){

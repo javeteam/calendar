@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+<%@ page import="com.aspect.calendar.utils.CommonUtils" %>
 <%@ page import="java.time.format.TextStyle" %>
 <%@ page import="java.util.Locale" %>
 
@@ -39,15 +40,15 @@
         </div>
         <c:if test="${managerView}">
             <div class="img-button statistic-button">
-                <img src="${pageContext.request.contextPath}/assets/icons/bar_chart-512.png"/>
+                <img src="${pageContext.request.contextPath}/assets/icons/statistic.png" alt="Report"/>
                 <form hidden action="${pageContext.request.contextPath}/ajax/statisticParamsToggle" method="post"></form>
             </div>
             <div class="img-button missing-projects">
-                <img src="${pageContext.request.contextPath}/assets/icons/missing.png"/>
+                <img src="${pageContext.request.contextPath}/assets/icons/missing.png" alt="Missing projects"/>
                 <form hidden action="${pageContext.request.contextPath}/ajax/getXtrfMissingProjects" method="post"></form>
             </div>
             <div class="img-button new-folder-button">
-                <img src="${pageContext.request.contextPath}/assets/icons/folder.png"/>
+                <img src="${pageContext.request.contextPath}/assets/icons/folder.png" alt="Add folder"/>
                 <form hidden action="${pageContext.request.contextPath}/ajax/newFolderToggle" method="post"></form>
             </div>
         </c:if>
@@ -91,13 +92,13 @@
                         <c:forEach var="cell" items="${calendarRow.calendarCells}">
                             <td class="cell ${cell.workingHours ? '' : 'not-working-hours'} ${managerView ? 'j_cell' : ''}">
                                 <input type="hidden" value="${cell.startTP}">
-                                <c:forEach var="item" items="${cell.items}">
-                                    <div class="calendar-cell-item ${item.type.toString().toLowerCase()} ${item.groupId > 0 ? 'items_group' : ''}" style="${item.CSSStyles}">
-                                        <input type="hidden" name="groupId" value="${item.groupId}">
+                                <c:forEach var="item" items="${cell.items}" varStatus="loop">
+                                    <div class="calendar-cell-item ${item.group.size > 1 ? 'items_group' : ''} ${(managerView && item.group.type == 'PROJECT' && item.group.hasCollision) ? 'invalid' : item.group.type.toString().toLowerCase()}" style="${CommonUtils.getCSSStyles(cell, loop.index) }">
+                                        <input type="hidden" name="groupId" value="${item.group.id}">
                                         <form hidden action="${pageContext.request.contextPath}/ajax/itemInfo" method="post">
                                             <input type="hidden" name="itemId" value="${item.id}">
                                         </form>
-                                        <span title="${item.period}&#013;${item.title}">${item.shortTitle}</span>
+                                        <span title="${item.period}&#013;${item.group.name}">${item.group.shortName}</span>
                                     </div>
                                 </c:forEach>
                             </td>
