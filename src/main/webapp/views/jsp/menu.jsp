@@ -6,6 +6,9 @@
 <div class="menu">
     <div class="left-pane">
         <a class="menu-title" href="${pageContext.request.contextPath}/calendar">Providers calendar</a>
+        <c:if test="${security.hasRoles('ADMIN', 'MANAGER')}">
+            <a class="menu-title" href="${pageContext.request.contextPath}/projectManagement">Project management</a>
+        </c:if>
     </div>
     <div class="right-pane">
         <span>${security.authenticatedUser.fullName}</span>

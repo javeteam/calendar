@@ -76,6 +76,7 @@ public class UserDetailsDao extends JdbcDaoSupport {
         public AppUser mapRow(ResultSet rs, int i) throws SQLException {
             AppUser user = new AppUser();
             user.setId(rs.getInt("id"));
+            user.setXtrfId(rs.getInt("xtrf_id"));
             user.setUsername(rs.getString("login"));
             user.setName(rs.getString("name"));
             user.setSurname(rs.getString("surname"));
@@ -93,6 +94,7 @@ public class UserDetailsDao extends JdbcDaoSupport {
         public Person mapRow(ResultSet rs, int i) throws SQLException {
             Person person = new Person();
             person.setId(rs.getInt("id"));
+            person.setXtrfId(rs.getInt("xtrf_id"));
             person.setName(rs.getString("name"));
             person.setSurname(rs.getString("surname"));
             person.setActive(rs.getBoolean("active"));

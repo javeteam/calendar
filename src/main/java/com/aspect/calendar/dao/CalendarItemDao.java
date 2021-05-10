@@ -141,6 +141,17 @@ public class CalendarItemDao extends JdbcDaoSupport {
         return stringBuilder.toString();
     }
 
+    public List<CalendarItem> getItemsByProjectIds(List<Long> projectIds){
+        if(projectIds.isEmpty()) return new ArrayList<>();
+        MapSqlParameterSource params = new MapSqlParameterSource("projectIds", projectIds);
+        final String whereClause = "WHERE group_id IN (:projectIds)";
+        try{
+            return this.namedJdbcTemplate.query(selectRequest + whereClause, params, new ItemRowMapper());
+        } catch (EmptyResultDataAccessException ignored){
+            return new ArrayList<>();
+        }
+    }
+
     public void update(CalendarItem item){
         final String updateRequest = "UPDATE calendar_item SET manager = ?, modified_by = ?, modification_date = ?, item_date = ?, start_tp = ?, deadline_tp = ?, description = ?, group_id = ? WHERE id = ?";
 
@@ -205,7 +216,7 @@ public class CalendarItemDao extends JdbcDaoSupport {
         });
     }
 
-    public void deleteGroupOfItems(int groupId, int itemId){
+    public void deleteGroupOfItems(long groupId, long itemId){
         final String request = "DELETE FROM calendar_item " +
                 "WHERE calendar_item.group_id = ? AND calendar_item.provider = (" +
                 "SELECT ci.provider " +
@@ -213,7 +224,7 @@ public class CalendarItemDao extends JdbcDaoSupport {
         this.jdbcTemplate.update(request, groupId, itemId);
     }
 
-    public void delete(int itemId){
+    public void delete(long itemId){
         final String request = "DELETE FROM calendar_item WHERE id = ?";
         this.jdbcTemplate.update(request, itemId);
     }

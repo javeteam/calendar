@@ -4,6 +4,7 @@ import com.aspect.calendar.entity.enums.Division;
 
 public class Person {
     private int id;
+    private int xtrfId;
     private String name;
     private String surname;
     private boolean active;
@@ -21,6 +22,14 @@ public class Person {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getXtrfId() {
+        return xtrfId;
+    }
+
+    public void setXtrfId(int xtrfId) {
+        this.xtrfId = xtrfId;
     }
 
     public String getName() {

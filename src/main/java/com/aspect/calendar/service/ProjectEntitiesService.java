@@ -4,7 +4,9 @@ import com.aspect.calendar.config.WebSecurity;
 import com.aspect.calendar.dao.ProjectEntitiesDao;
 import com.aspect.calendar.dao.XtrfDao;
 import com.aspect.calendar.entity.AppConfig;
+import com.aspect.calendar.entity.calendar.CalendarItem;
 import com.aspect.calendar.entity.calendar.Project;
+import com.aspect.calendar.entity.exceptions.EntityNotExistException;
 import com.aspect.calendar.entity.exceptions.FolderCreationException;
 import com.aspect.calendar.entity.exceptions.InvalidValueException;
 import com.aspect.calendar.entity.user.AppUser;
@@ -18,9 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class ProjectEntitiesService {
@@ -133,8 +133,34 @@ public class ProjectEntitiesService {
         return missingProjects;
     }
 
-    public List<Project> getRecentProjects(){
-        return this.projectEntitiesDao.getRecentProjects();
+
+    public void updateProject(Project project){
+        List<Project> projectList = Collections.singletonList(project);
+        if(project.getXtrfId() == null) this.xtrfDao.setXtrfIds(projectList);
+        this.projectEntitiesDao.updateProjects(projectList);
+    }
+
+    public Project getProjectById(long id) throws EntityNotExistException{
+        return this.projectEntitiesDao.get(id);
+    }
+
+    public Project getProjectToManage(long id) throws EntityNotExistException {
+        Project project = this.projectEntitiesDao.getProjectToManage(id);
+        Map<Long, Project> projectMap = Collections.singletonMap(project.getXtrfId(), project);
+        this.xtrfDao.setProjectJobs(projectMap);
+
+        return project;
+    }
+
+    public List<Project> getProjectsToManage(LocalDate from, LocalDate to, int responsibleManager){
+        Map<Long, Project> projectMap = new HashMap<>();
+        List<Project> projects = this.projectEntitiesDao.getProjectsToManage(from, to, responsibleManager);
+        for(Project project : projects){
+            if(project.getXtrfId() != null) projectMap.put(project.getXtrfId(), project);
+        }
+        this.xtrfDao.setProjectJobs(projectMap);
+
+        return projects;
     }
 
     public List<Project> getProjectsByName(String name){

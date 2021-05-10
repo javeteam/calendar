@@ -4,7 +4,7 @@ body {
     color: #000000;
     margin: 0;
     line-height: 1.5;
-    font-family: Helvetica, arial, sans-serif;
+    font-family: arial, sans-serif;
 }
 
 *,
@@ -64,6 +64,11 @@ button:disabled:hover{
     color: #777;
 }
 
+.left-pane{
+    display: flex;
+    justify-content: flex-start;
+}
+
 .right-pane{
     display: inline-flex;
     align-items: center;
@@ -88,7 +93,7 @@ button:disabled:hover{
     position: absolute;
     top: 45px;
     min-width: 100%;
-    height: calc(100vh - 45px);
+    height: calc(100vh - 65px);
     padding: 0 25px;
     display: flex;
     flex-direction: column;
@@ -102,15 +107,20 @@ button:disabled:hover{
 }
 
 .menu-title{
+    display: block;
+    height: 100%;
     text-decoration: none;
     color: inherit;
     font-weight: normal;
     font-size: 18px;
     margin: 0;
+    padding: 0 15px;
+    border-left: 2px solid #e7e7e7;
 }
 
 .menu-title:hover{
-    color: #63a800;
+    color: black;
+    background-color: #e7e7e7;
 }
 
 .cal-option-box{
@@ -627,7 +637,7 @@ tbody tr{
     font-weight: bold;
 }
 
-#userName, #title{
+#userName, #projectName, #title{
     width: 100%;
 }
 
@@ -743,7 +753,7 @@ tbody tr{
     border-bottom-right-radius: 5px;
 }
 
-#responsibleManager{
+.cal-option-box #responsibleManager{
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -824,4 +834,170 @@ tbody tr{
 
 #clientEmailSubject{
     width: 100%;
+}
+
+.project-row{
+    display: flex;
+    justify-content: flex-start;
+    padding: 7px 15px;
+    border: 1px solid #e7e7e7;
+    box-shadow: 0 0 7px rgba(0,0,0,0.4);
+    margin: 7px;
+    border-radius: 3px;
+    flex-grow: 1;
+}
+
+.project-information {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-right: 15px;
+    min-width: 250px;
+}
+
+.project-information .project-name:hover{
+    cursor: pointer;
+    color: #777;
+}
+
+.project-parameters span:not(:last-child){
+    margin-right: 5px;
+}
+
+.project-parameters span{
+    padding: 2px 5px;
+    color: white;
+    background-color: #03974d;
+    font-size: 10px;
+}
+
+.project-parameters .inactive{
+    background-color: #cccccc;
+}
+
+.project-jobs-section{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex-grow: 1;
+    overflow-x: auto;
+}
+
+.project-job{
+    border: 1px solid #ccc;
+    box-shadow: 0 0 7px rgba(0,0,0,0.3);
+    min-width: 170px;
+}
+
+.project-jobs-section .project-job:not(:last-child){
+    margin-right: 15px;
+}
+
+.job-provider{
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 5px;
+}
+
+.job-provider .provider-name{
+    white-space: nowrap;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.job-provider .calendar-items-info{
+    margin-left: 5px;
+    cursor: help;
+}
+
+.job-units{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.job-units-item{
+    flex-grow: 1;
+}
+
+.job-units .job-units-item:not(:last-child) .value{
+    border-right: 1px solid #ccc;
+}
+
+
+.job-units-item .header{
+    background-color: #248dd2;
+    color: white;
+    font-weight: bold;
+    font-size: 10px;
+    text-align: center;
+}
+
+.job-units-item .value{
+    text-align: center;
+    color: #3b3b3b;
+    font-weight: bold;
+    font-size: 17px;
+    padding: 3px 0;
+}
+
+.job-units-item .incorrect{
+    background-color: red;
+}
+
+.project-management{
+    width: 1100px;
+    min-width: 1100px !important;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.project-management .option-box{
+    border: 1px solid #ccc;
+    box-shadow: 0 0 7px rgba(0,0,0,0.3);
+    border-radius: 3px;
+    margin: 10px 7px;
+    padding: 15px;
+    background-color: #e7e7e7;
+    position: relative;
+}
+
+.option-box .option-item{
+    display: inline-block;
+}
+
+.option-box .option-item:not(:last-child){
+    margin-right: 25px;
+}
+
+.projects-wrapper{
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.projects-wrapper::-webkit-scrollbar{
+    display: none;
+}
+
+#projectEditForm .form_row{
+    height: unset;
+}
+
+
+.validity{
+    position: absolute;
+    right: 20px;
+}
+
+.verifiable:invalid+.validity:after {
+    content: '✖';
+    padding-left: 5px;
+}
+
+.verifiable:valid+.validity:after {
+    content: '✓';
+    padding-left: 5px;
 }

@@ -127,7 +127,7 @@ function defineProjectSelect(){
 }
 
 // Validate new item form
-$(document).on('input, change', '.item-form .form_row .form_row_rc input, .item-form .form_row .form_row_rc select, .item-form .form_row .form_row_rc textarea', function () {
+$(document).on('input change', '.item-form .form_row .form_row_rc input, .item-form .form_row .form_row_rc select, .item-form .form_row .form_row_rc textarea', function () {
     const form = $(this).closest('form')
     const button = form.closest('.toggle-content').find('.toggle-submit-btn')
     $('#error-section').fadeOut(300);
@@ -472,4 +472,43 @@ $(document).on('click', '.notification-toggle .close_btn', function () {
     setTimeout(function () {
         $('.notification-toggle').remove();
     }, 500);
+})
+
+$(document).on('submit', '#projectManagementFilterForm', function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    $(this).find('button').attr('disabled', true);
+    let url = new URLSearchParams(window.location.search);
+    const fields = [$('#dateFrom'),$('#dateTo'), $('#manager')];
+    $.each(fields, function () {
+        url.set($(this).attr('name'), $(this).val());
+    })
+    url = window.location.pathname + '?' + url.toString();
+    pageReplace(url);
+})
+
+$(document).on('change', '#projectManagementFilterForm input, #projectManagementFilterForm select', function () {
+    $(this).closest('form').find('button').attr('disabled', false);
+})
+
+
+$(document).on('click', '.project-information > .project-name', function () {
+    $.post($(this).data('url'), {'id': $(this).data('project-id')})
+        .done(function (response) {
+            let toggle = new DOMParser().parseFromString(response, 'text/html');
+            toggle = $(toggle).find('.toggle');
+            $('body').append(toggle);
+        })
+})
+
+$(document).on('click', '#editProjectSubmit', function () {
+    const form = $('#projectEditForm')
+    ajax(form.get(0))
+        .done(function (response) {
+            const existingRow = $('.project-name[data-project-id="' + form.find('input[name="id"]').val() +'"]').closest('.project-row');
+            let projectRow = new DOMParser().parseFromString(response, 'text/html');
+            projectRow = $(projectRow).find('.project-row');
+            existingRow.replaceWith(projectRow);
+            $('.toggle').remove();
+        })
 })

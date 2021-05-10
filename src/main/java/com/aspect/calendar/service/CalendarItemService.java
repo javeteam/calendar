@@ -123,11 +123,11 @@ public class CalendarItemService {
         else this.calendarItemDao.save(item);
     }
 
-    public void deleteGroupOfItems(int groupId, int itemId){
+    public void deleteGroupOfItems(long groupId, long itemId){
         this.calendarItemDao.deleteGroupOfItems(groupId, itemId);
     }
 
-    public void deleteItem(int id){
+    public void deleteItem(long id){
         this.calendarItemDao.delete(id);
     }
 
@@ -236,6 +236,10 @@ public class CalendarItemService {
         }
 
         return "{\"status\":\"Success\"}";
+    }
+
+    public List<CalendarItem> getItemsByProjectIds(List<Long> projectIds){
+        return this.calendarItemDao.getItemsByProjectIds(projectIds);
     }
 
 }

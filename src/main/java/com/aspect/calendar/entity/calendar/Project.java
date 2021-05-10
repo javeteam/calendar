@@ -2,12 +2,16 @@ package com.aspect.calendar.entity.calendar;
 
 import com.aspect.calendar.entity.enums.CalendarItemType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Project extends Group {
     private Long xtrfId;
     private String clientEmailSubject;
     private boolean fewTranslatorsAllowed;
     private boolean fewQCAllowed;
     private boolean hasCollision;
+    private final List<Job> jobs = new ArrayList<>();
 
     public Project(){
         setType(CalendarItemType.PROJECT);
@@ -56,5 +60,13 @@ public class Project extends Group {
 
     public void setHasCollision(boolean hasCollision) {
         this.hasCollision = hasCollision;
+    }
+
+    public List<Job> getJobs() {
+        return jobs;
+    }
+
+    public void addJob(Job job) {
+        jobs.add(job);
     }
 }

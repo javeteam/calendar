@@ -1,5 +1,7 @@
 package com.aspect.calendar.utils;
 
+import com.aspect.calendar.entity.user.Person;
+
 import java.time.LocalTime;
 
 
@@ -23,20 +25,23 @@ public class test {
     }
 
     public static void main(String[] args) {
-        startTP = LocalTime.of(12,0).toSecondOfDay();
-        endTP = LocalTime.of(15,0).toSecondOfDay();
-        System.out.println(status());
+        /*String fullName = "Крутько Валерій Олександрович";
+        Person person = new Person();
+        int indexOfSpace = fullName.indexOf(' ');
+        if(indexOfSpace > 0){
+            person.setSurname(fullName.substring(0, indexOfSpace));
+            fullName = fullName.substring(indexOfSpace).trim();
+            indexOfSpace = fullName.indexOf(' ');
+            if(indexOfSpace > 0) {
+                person.setName(fullName.substring(0, indexOfSpace));
+            }
+            if(indexOfSpace > 0) person.setName(fullName.substring(0, indexOfSpace));
+            else if(fullName.length() > 2) person.setName(fullName);
+        } else {
+            person.setName("-");
+            person.setSurname(fullName);
+        }
 
-        startTP = LocalTime.of(13,0).toSecondOfDay();
-        endTP = LocalTime.of(15,0).toSecondOfDay();
-        System.out.println(status());
-
-        startTP = LocalTime.of(13,0).toSecondOfDay();
-        endTP = LocalTime.of(14,0).toSecondOfDay();
-        System.out.println(status());
-
-        startTP = LocalTime.of(14,0).toSecondOfDay();
-        endTP = LocalTime.of(15,0).toSecondOfDay();
-        System.out.println(status());
+        System.out.println(person.getFullName());*/
     }
 }
