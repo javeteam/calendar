@@ -493,22 +493,41 @@ $(document).on('change', '#projectManagementFilterForm input, #projectManagement
 
 
 $(document).on('click', '.project-information > .project-name', function () {
-    $.post($(this).data('url'), {'id': $(this).data('project-id')})
+    $.post($(this).data('url'), {'id': $(this).closest('.project-information').data('project-id')})
         .done(function (response) {
             let toggle = new DOMParser().parseFromString(response, 'text/html');
             toggle = $(toggle).find('.toggle');
             $('body').append(toggle);
-        })
-})
+        });
+});
 
 $(document).on('click', '#editProjectSubmit', function () {
     const form = $('#projectEditForm')
+    const existingRow = $('.project-information[data-project-id="' + form.find('input[name="id"]').val() +'"]').closest('.project-row');
     ajax(form.get(0))
         .done(function (response) {
-            const existingRow = $('.project-name[data-project-id="' + form.find('input[name="id"]').val() +'"]').closest('.project-row');
-            let projectRow = new DOMParser().parseFromString(response, 'text/html');
-            projectRow = $(projectRow).find('.project-row');
-            existingRow.replaceWith(projectRow);
+            replaceProjectRow(existingRow, response);
             $('.toggle').remove();
-        })
+        });
+});
+
+$(document).on('click', '.project-information > .refresh-info', function () {
+    const existingRow = $(this).closest('.project-row');
+    const refreshButton = $(this);
+    refreshButton.addClass('rotate360');
+
+    $.post($(this).data('url'), {'id': $(this).closest('.project-information').data('project-id')})
+        .done(function (response) {
+            replaceProjectRow(existingRow, response);
+        });
+
+    setTimeout(function () {
+        refreshButton.removeClass('rotate360');
+    }, 1000)
 })
+
+function replaceProjectRow(existingRow, response){
+    let projectRow = new DOMParser().parseFromString(response, 'text/html');
+    projectRow = $(projectRow).find('.project-row');
+    existingRow.replaceWith(projectRow);
+}

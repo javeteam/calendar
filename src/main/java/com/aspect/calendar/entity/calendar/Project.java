@@ -69,4 +69,11 @@ public class Project extends Group {
     public void addJob(Job job) {
         jobs.add(job);
     }
+
+    public boolean hasJobsWithDifferentValues(){
+        for(Job job : jobs){
+            if(job.valuesDifferent()) return true;
+        }
+        return false;
+    }
 }

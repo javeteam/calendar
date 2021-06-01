@@ -108,8 +108,15 @@ public class ProjectController extends PlainController{
     public String editProject(Project project, Model model) throws EntityNotExistException {
         this.projectEntitiesService.updateProject(project);
         Project updatedProject = this.projectEntitiesService.getProjectToManage(project.getId());
-
         model.addAttribute("projects", Collections.singletonList(updatedProject));
+
+        return "projectManagement";
+    }
+
+    @RequestMapping(value = {"/ajax/refreshProjectData"}, method = RequestMethod.POST)
+    public String refreshProjectData(@RequestParam ("id") long id, Model model) throws EntityNotExistException {
+        Project project = this.projectEntitiesService.refreshProjectData(id);
+        model.addAttribute("projects", Collections.singletonList(project));
 
         return "projectManagement";
     }

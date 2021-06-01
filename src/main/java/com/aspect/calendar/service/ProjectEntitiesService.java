@@ -10,6 +10,7 @@ import com.aspect.calendar.entity.exceptions.EntityNotExistException;
 import com.aspect.calendar.entity.exceptions.FolderCreationException;
 import com.aspect.calendar.entity.exceptions.InvalidValueException;
 import com.aspect.calendar.entity.user.AppUser;
+import org.apache.logging.log4j.util.PropertySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,17 @@ public class ProjectEntitiesService {
         return missingProjects;
     }
 
+    public Project refreshProjectData(long id) throws EntityNotExistException{
+        Project project = this.projectEntitiesDao.get(id);
+        List<Project> projectList = Collections.singletonList(project);
+
+        this.xtrfDao.setXtrfIds(projectList);
+        this.projectEntitiesDao.updateProjects(projectList);
+        this.xtrfDao.setProjectJobs( Collections.singletonMap(project.getXtrfId(), project) );
+
+        return project;
+    }
+
 
     public void updateProject(Project project){
         List<Project> projectList = Collections.singletonList(project);
@@ -159,6 +171,8 @@ public class ProjectEntitiesService {
             if(project.getXtrfId() != null) projectMap.put(project.getXtrfId(), project);
         }
         this.xtrfDao.setProjectJobs(projectMap);
+
+        projects.sort(Comparator.comparing(Project::hasJobsWithDifferentValues, Comparator.reverseOrder()).thenComparing(Project::getName));
 
         return projects;
     }

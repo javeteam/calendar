@@ -41,4 +41,8 @@ public class Job {
         this.calendarItems.add(calendarItem);
         this.calendarDuration += calendarItem.getDuration();
     }
+
+    public boolean valuesDifferent(){
+        return getXtrfDuration() != getCalendarDuration();
+    }
 }

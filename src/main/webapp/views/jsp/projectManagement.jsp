@@ -40,14 +40,17 @@
     <div class="projects-wrapper">
         <c:forEach var="project" items="${projects}">
             <div class="project-row">
-                <div class="project-information">
-                    <span class="project-name" data-project-id="${project.id}" data-url="${pageContext.request.contextPath}/ajax/editProjectToggle">${project.name}</span>
+                <div class="project-information" data-project-id="${project.id}">
+                    <span class="project-name" data-url="${pageContext.request.contextPath}/ajax/editProjectToggle">${project.name}</span>
                     <span>${project.createdBy.fullName}</span>
                     <div class="project-parameters">
                         <span class="${project.fewTranslatorsAllowed ? '' : 'inactive'}">Few TR</span>
                         <span class="${project.fewQCAllowed ? '' : 'inactive'}">Few QC</span>
                         <span class="${project.xtrfId != 0 ? '' : 'inactive'}">In XTRF</span>
                     </div>
+                    <c:if test="${project.hasJobsWithDifferentValues()}">
+                        <span class="refresh-info" data-url="${pageContext.request.contextPath}/ajax/refreshProjectData">↻</span>
+                    </c:if>
                 </div>
                 <div class="project-jobs-section">
                     <c:forEach var="job" items="${project.jobs}">
@@ -63,7 +66,7 @@
                                 </c:if>
                             </div>
                             <div class="job-units">
-                                <c:set var="valuesDifferent" value="${job.xtrfDuration != job.calendarDuration}"/>
+                                <c:set var="valuesDifferent" value="${job.valuesDifferent()}"/>
                                 <div class="job-units-item">
                                     <div class="header ${valuesDifferent ? 'incorrect' : ''}">XTRF</div>
                                     <div class="value">${job.xtrfDuration}</div>

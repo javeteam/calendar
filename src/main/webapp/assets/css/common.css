@@ -848,6 +848,7 @@ tbody tr{
 }
 
 .project-information {
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -858,6 +859,29 @@ tbody tr{
 .project-information .project-name:hover{
     cursor: pointer;
     color: #777;
+}
+
+.project-information .refresh-info{
+    position: absolute;
+    right: 5px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: #777;
+    display: none;
+}
+
+.project-row:hover .project-information .refresh-info{
+    display: block;
+}
+
+.rotate360{
+    transition: transform 1s;
+    transform: rotate(360deg);
+}
+
+.project-information .refresh-info:hover{
+    color: black;
 }
 
 .project-parameters span:not(:last-child){
