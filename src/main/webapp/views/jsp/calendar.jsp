@@ -93,13 +93,15 @@
                             <td class="cell ${cell.workingHours ? '' : 'not-working-hours'} ${managerView ? 'j_cell' : ''}">
                                 <input type="hidden" value="${cell.startTP}">
                                 <c:forEach var="item" items="${cell.items}" varStatus="loop">
-                                    <div class="calendar-cell-item ${item.group.size > 1 ? 'items_group' : ''} ${(managerView && item.group.type == 'PROJECT' && item.group.hasCollision) ? 'invalid' : item.group.type.toString().toLowerCase()}" style="${CommonUtils.getCSSStyles(cell, loop.index) }">
-                                        <input type="hidden" name="groupId" value="${item.group.id}">
-                                        <form hidden action="${pageContext.request.contextPath}/ajax/itemInfo" method="post">
-                                            <input type="hidden" name="itemId" value="${item.id}">
-                                        </form>
-                                        <span title="${item.period}&#013;${item.group.name}">${item.group.shortName}</span>
-                                    </div>
+                                    <c:if test="${item.deleted && inspectionMode || !item.deleted}">
+                                        <div class="calendar-cell-item ${item.group.size > 1 ? 'items_group' : ''} ${(managerView && item.group.type == 'PROJECT' && item.group.hasCollision) ? 'invalid' : item.group.type.toString().toLowerCase()} ${item.deleted ? 'deleted' : ''}" style="${CommonUtils.getCSSStyles(cell, loop.index) }">
+                                            <input type="hidden" name="groupId" value="${item.group.id}">
+                                            <form hidden action="${pageContext.request.contextPath}/ajax/itemInfo" method="post">
+                                                <input type="hidden" name="itemId" value="${item.id}">
+                                            </form>
+                                            <span title="${item.period}&#013;${item.group.name}" class="${inspectionMode && item.modificationDate != null && item.modificationDate.isAfter(item.startDateTime) ? 'edited' : ''}">${item.group.shortName}</span>
+                                        </div>
+                                    </c:if>
                                 </c:forEach>
                             </td>
                         </c:forEach>

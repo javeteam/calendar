@@ -1,10 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<jsp:useBean id="security" class="com.aspect.calendar.config.WebSecurity"/>
-<c:set var="hasAdminRole" value="${security.hasRole('ADMIN')}"/>
 <%@ page import="com.aspect.calendar.entity.enums.CalendarItemType" %>
-
 
 <div class="toggle hidden">
     <div class="toggle-content">
@@ -55,7 +52,7 @@
             <div class="form_row">
                 <label class="title" for="startDate">Start date</label>
                 <div class="form_row_rc">
-                    <input class="date" min="${hasAdminRole ? '' : currentDate}" value="${itemDate}" id="startDate" type="date" name="startDate" required />
+                    <input class="date" value="${itemDate}" id="startDate" type="date" name="startDate" required />
                     <div class="rc_block">
                         <input class="input-number" type="number" name="startDateHour" required min="7" max="22" step="1" value="${itemStartHour}">
                         <span class="time-delimiter">:</span>
@@ -70,7 +67,7 @@
             <div class="form_row hidden">
                 <label class="title" for="endDate">End date</label>
                 <div class="form_row_rc">
-                    <input class="date" min="${hasAdminRole ? '' : currentDate}" value="${itemDate}" id="endDate" type="date" name="endDate" required disabled />
+                    <input class="date" value="${itemDate}" id="endDate" type="date" name="endDate" required disabled />
                     <div class="rc_block">
                         <input class="input-number" type="number" name="endDateHour" required min="7" max="22" step="1" value="${itemStartHour}" disabled>
                         <span class="time-delimiter">:</span>

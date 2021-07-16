@@ -35,6 +35,7 @@ public class DatasourceConfig {
     @Bean(name = "xtrf_datasource")
     public DataSource xtrfDatasource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(environment.getProperty("xtrf.datasource.driver-class-name"));
         dataSource.setUrl(environment.getProperty("xtrf.datasource.url"));
         dataSource.setUsername(environment.getProperty("xtrf.datasource.username"));
         dataSource.setPassword(environment.getProperty("xtrf.datasource.password"));

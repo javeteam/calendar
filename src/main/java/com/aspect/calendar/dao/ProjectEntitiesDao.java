@@ -182,14 +182,14 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
 
     private final String projectsWithItemsRequest = "SELECT ig.id, ig.xtrf_id, ig.name, ig.client_email_subject, ig.few_translators_allowed, ig.few_qc_allowed, ig.creation_date AS project_creation_date, ig.created_by AS project_created_by, " +
             "u.name as pm_name, u.surname AS pm_surname, " +
-            "ci.id AS item_id, ci.item_date, ci.start_tp, ci.deadline_tp, " +
+            "ci.id AS item_id, ci.item_date, ci.start_tp, ci.deadline_tp, ci.deleted, " +
             "manager.id AS manager_id, manager.name AS manager_name, manager.surname AS manager_surname, " +
             "provider.id AS provider_id, provider.xtrf_id AS provider_xtrf_id, provider.name AS provider_name, provider.surname AS provider_surname, provider.division AS provider_division, " +
             "created_by.id AS created_by, created_by.name AS created_by_name, created_by.surname AS created_by_surname, " +
             "modified_by.id AS modified_by_id, modified_by.name AS modified_by_name, modified_by.surname AS modified_by_surname " +
             "FROM items_group ig " +
             "LEFT JOIN admin u ON ig.created_by = u.id " +
-            "LEFT JOIN calendar_item ci on ig.id = ci.group_id " +
+            "LEFT JOIN calendar_item ci on ig.id = ci.group_id AND NOT ci.deleted " +
             "LEFT JOIN admin manager ON ci.manager = manager.id " +
             "LEFT JOIN admin provider ON ci.provider = provider.id " +
             "LEFT JOIN admin created_by ON ci.created_by = created_by.id " +
@@ -286,8 +286,7 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
                 project.setId(projectId);
                 fillInProjectFields(project, rs);
                 projectMap.put(projectId, project);
-            }
-            else {
+            } else {
                 project = projectMap.get(projectId);
             }
 
@@ -317,7 +316,7 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
         }
 
         private void fillInProjectFields(Project project, ResultSet rs) throws SQLException{
-            project.setXtrfId(rs.getLong("xtrf_id"));
+            project.setXtrfId((Long)rs.getObject("xtrf_id"));
             project.setName(rs.getString("name"));
             project.setClientEmailSubject(rs.getString("client_email_subject"));
             project.setFewTranslatorsAllowed(rs.getBoolean("few_translators_allowed"));
@@ -335,6 +334,7 @@ public class ProjectEntitiesDao extends JdbcDaoSupport {
             item.setItemDate(LocalDate.parse(rs.getString("item_date"), sqlDateFormatter));
             item.setStartDate(LocalTime.ofSecondOfDay(rs.getInt("start_tp")));
             item.setDeadline(LocalTime.ofSecondOfDay(rs.getInt("deadline_tp")));
+            item.setDeleted(rs.getBoolean("deleted"));
 
             Person person = item.getManager();
             person.setId(rs.getInt("manager_id"));

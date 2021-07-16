@@ -3,7 +3,6 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <jsp:useBean id="security" class="com.aspect.calendar.config.WebSecurity"/>
 <%@ page import="com.aspect.calendar.entity.enums.CalendarItemType" %>
-<c:set var="hasAdminRole" value="${security.hasRole('ADMIN')}"/>
 <c:set var="isProject" value="${item.group.type == CalendarItemType.PROJECT}"/>
 
 <div class="toggle">
@@ -59,13 +58,12 @@
             </div>
             <div class="form_row">
                 <label class="title" for="startDate">Start date</label>
-                <c:set var="sdEditable" value="${hasAdminRole || !item.startDatePassed() ? '' : 'readonly'}"/>
                 <div class="form_row_rc">
-                    <input class="date" min="${hasAdminRole ? '' : item.itemDate}" value="${item.itemDate}" id="startDate" type="date" name="startDate" required ${sdEditable}/>
+                    <input class="date" value="${item.itemDate}" id="startDate" type="date" name="startDate" required />
                     <div class="rc_block">
-                        <input class="input-number" type="number" name="startDateHour" required min="7" max="23" step="1" value="${item.startDate.hour}" ${sdEditable}>
+                        <input class="input-number" type="number" name="startDateHour" required min="7" max="23" step="1" value="${item.startDate.hour}" />
                         <span class="time-delimiter">:</span>
-                        <input class="input-number" type="number" name="startDateMinute" required min="0" max="55" step="5" value="${item.startDate.minute}" ${sdEditable}>
+                        <input class="input-number" type="number" name="startDateMinute" required min="0" max="55" step="5" value="${item.startDate.minute}" />
                     </div>
                 </div>
             </div>

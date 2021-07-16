@@ -123,12 +123,29 @@ public class CalendarItemService {
         else this.calendarItemDao.save(item);
     }
 
-    public void deleteGroupOfItems(long groupId, long itemId){
-        this.calendarItemDao.deleteGroupOfItems(groupId, itemId);
+    public void deleteGroupOfItems(long groupId, long itemId, AppUser currentUser){
+        //this.calendarItemDao.deleteGroupOfItems(groupId, itemId);
+        List<CalendarItem> calendarItems = this.calendarItemDao.getProviderGroupItems(groupId, itemId);
+        for(CalendarItem item : calendarItems){
+            if(item.getStartDateTime().isBefore(LocalDateTime.now())){
+                item.setDeleted(true);
+                item.setModifiedBy(currentUser);
+                calendarItemDao.update(item);
+            } else {
+                this.calendarItemDao.delete(item.getId());
+            }
+        }
     }
 
-    public void deleteItem(long id){
-        this.calendarItemDao.delete(id);
+    public void deleteItem(long id, AppUser currentUser){
+        CalendarItem item = this.calendarItemDao.get(id);
+        if(item.isDeleted() && currentUser.hasRole("ADMIN") || !item.getStartDateTime().isBefore(LocalDateTime.now())){
+            this.calendarItemDao.delete(id);
+        } else {
+            item.setDeleted(true);
+            item.setModifiedBy(currentUser);
+            calendarItemDao.update(item);
+        }
     }
 
     public LoadReport getReport(LocalDate dateFrom, LocalDate dateTo, int providerId){
@@ -145,10 +162,11 @@ public class CalendarItemService {
     }
 
     public String addNewItem(SubmitItemForm form, AppUser authenticatedUser) throws CalendarItemProcessingException {
-        LocalDateTime startDateTime = form.getStartDate().atTime(form.getStartDateHour(), form.getStartDateMinute());
+        /*LocalDateTime startDateTime = form.getStartDate().atTime(form.getStartDateHour(), form.getStartDateMinute());
         if(startDateTime.isBefore(LocalDateTime.now()) && ! authenticatedUser.hasRole("ADMIN")){
             throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to create items in the past" + "\"}", HttpStatus.FORBIDDEN);
-        }
+        }*/
+
         form.checkValidity();
 
         List<List<CalendarItem>> groups = form.split();
@@ -168,7 +186,7 @@ public class CalendarItemService {
             saveItemsGroup(group);
         }
 
-        return "{\"status\":\"Success\",\"calendarDate\":\"" + startDateTime.toLocalDate() + "\"}";
+        return "{\"status\":\"Success\",\"calendarDate\":\"" + form.getStartDate() + "\"}";
     }
 
     public String editItem(SubmitItemForm form, AppUser authenticatedUser) throws CalendarItemProcessingException{
@@ -179,6 +197,7 @@ public class CalendarItemService {
 
 
         item.setModifiedBy(authenticatedUser);
+        /*
         if(!authenticatedUser.hasRole("ADMIN")){
             CalendarItem existingItem = getItemById(item.getId());
             boolean startDatePassed = existingItem.getStartDateTime().plusMinutes(15).isBefore(LocalDateTime.now());
@@ -197,6 +216,8 @@ public class CalendarItemService {
                 throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "You don't allowed to set items in the past" + "\"}", HttpStatus.FORBIDDEN);
             }
         }
+
+         */
 
         String intersectedItems = getIntersectedItemsTitle(item);
         if(intersectedItems != null) throw new CalendarItemProcessingException("{\"status\":\"Error\",\"message\":\"" + "Save failed! New item intersect: " + intersectedItems + "\"}", HttpStatus.UNPROCESSABLE_ENTITY);
@@ -237,9 +258,4 @@ public class CalendarItemService {
 
         return "{\"status\":\"Success\"}";
     }
-
-    public List<CalendarItem> getItemsByProjectIds(List<Long> projectIds){
-        return this.calendarItemDao.getItemsByProjectIds(projectIds);
-    }
-
 }

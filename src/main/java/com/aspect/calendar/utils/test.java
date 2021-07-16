@@ -10,6 +10,8 @@ public class test {
     static int endTP;
 
     public static boolean status(){
+
+
         /*
         int lunchStartTP = UserDayCalendar.LUNCH_START_TP;
         int lunchEndTP = UserDayCalendar.LUNCH_END_TP;
@@ -25,6 +27,7 @@ public class test {
     }
 
     public static void main(String[] args) {
+        System.out.println(LocalTime.now());
         /*String fullName = "Крутько Валерій Олександрович";
         Person person = new Person();
         int indexOfSpace = fullName.indexOf(' ');

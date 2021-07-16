@@ -23,6 +23,7 @@ public class CalendarItem {
     private Group group;
     private int positionInGroup;
     private int groupDuration;
+    private boolean deleted;
 
     public CalendarItem(){
         this.creationDate = LocalDateTime.now();
@@ -159,6 +160,14 @@ public class CalendarItem {
 
     public void setGroupDuration(int groupDuration) {
         this.groupDuration = groupDuration;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     public int getDuration(){

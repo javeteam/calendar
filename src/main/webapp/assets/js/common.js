@@ -531,3 +531,58 @@ function replaceProjectRow(existingRow, response){
     projectRow = $(projectRow).find('.project-row');
     existingRow.replaceWith(projectRow);
 }
+
+$(document).on('click', '.js_tm-open-dropdown', function () {
+    $.post($(this).data('url'))
+        .done(function (response) {
+            $('.menu .time-management').append(response).removeClass('js_tm-open-dropdown');
+            $('body').addClass('js_tm-close-dropdown');
+        })
+})
+
+$(document).on('click', '.js_tm-close-dropdown', function () {
+    $('.menu .time-management .dropdown').remove();
+    $('body').removeClass('js_tm-close-dropdown');
+    $('.menu .time-management').addClass('js_tm-open-dropdown');
+})
+
+$(document).on('click', '.menu .time-management .dropdown', function (e) {
+    e.stopPropagation();
+})
+
+$(document).ready(function () {
+    if($('.menu .time-management').length === 1){
+        checkTimeManagerStatus();
+        setInterval(checkTimeManagerStatus, 300000);
+    }
+})
+
+function checkTimeManagerStatus(){
+    $.post($('.menu .time-management').data('status-url'))
+        .done(function (response) {
+            if(response.actionRequired) $('.menu').addClass('menu-action-required');
+            else $('.menu').removeClass('menu-action-required');
+        });
+}
+
+$(document).on('click', '.attendance .action-block button', function () {
+    const actionBlock = $(this).closest('.action-block');
+    $.post($(actionBlock).data('url'), {'id': $(actionBlock).find('input[name="id"]').val(), 'time': $(actionBlock).find('input[name="time"]').val()})
+        .done(function (response) {
+            actionBlock.find('button').prop('disabled', true);
+            actionBlock.find('input[name="id"]').val(response.id);
+            actionBlock.find('input[name="time"]').prop('readonly', true).css('visibility', 'hidden');
+            const attendance = actionBlock.closest('.attendance');
+            attendance.find('.clock-in-time').empty().text(response.clockInTime);
+            attendance.find('.clock-out-time').empty().text(response.clockOutTime);
+            checkTimeManagerStatus();
+            if(!attendance.hasClass('today-attendance')){
+                setInterval(function () {
+                    attendance.addClass('attendance-move');
+                    setInterval(function () {
+                        attendance.remove();
+                    }, 1000);
+                }, 1500);
+            }
+        })
+})

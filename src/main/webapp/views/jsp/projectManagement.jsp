@@ -46,7 +46,7 @@
                     <div class="project-parameters">
                         <span class="${project.fewTranslatorsAllowed ? '' : 'inactive'}">Few TR</span>
                         <span class="${project.fewQCAllowed ? '' : 'inactive'}">Few QC</span>
-                        <span class="${project.xtrfId != 0 ? '' : 'inactive'}">In XTRF</span>
+                        <span class="${project.xtrfId != null ? '' : 'inactive'}">In XTRF</span>
                     </div>
                     <c:if test="${project.hasJobsWithDifferentValues()}">
                         <span class="refresh-info" data-url="${pageContext.request.contextPath}/ajax/refreshProjectData">↻</span>

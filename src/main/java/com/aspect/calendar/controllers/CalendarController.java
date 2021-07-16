@@ -16,18 +16,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.aspect.calendar.utils.CommonUtils.sqlDateFormatter;
 
 @Controller
 public class CalendarController extends PlainController{
@@ -44,7 +41,8 @@ public class CalendarController extends PlainController{
     @RequestMapping(value = {"/calendar"})
     public String calendar(Model model,
                            @RequestParam(value = "date", required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate calendarDate,
-                           @RequestParam(required = false) Integer responsibleManager) throws AuthenticationRequiredException {
+                           @RequestParam(required = false) Integer responsibleManager,
+                           @RequestParam(defaultValue = "false") boolean inspectionMode) throws AuthenticationRequiredException {
         if(calendarDate == null) calendarDate = LocalDate.now();
         List<UserDayCalendar> calendar;
 
@@ -57,6 +55,7 @@ public class CalendarController extends PlainController{
         } else{
             calendar = this.calendarItemService.getAllUsersDayCalendar(calendarDate, responsibleManager);
             model.addAttribute("managerView", true);
+            model.addAttribute("inspectionMode", inspectionMode && this.getAuthenticatedUser().hasRole("ADMIN"));
             model.addAttribute("responsibleManager", responsibleManager);
             model.addAttribute("managers", this.userDetailsService.getAllActiveManagers());
         }
@@ -66,22 +65,11 @@ public class CalendarController extends PlainController{
     }
 
     @RequestMapping(value = {"/ajax/newItemToggle"}, method = RequestMethod.POST)
-    public String newItemToggle(HttpServletRequest request, Model model, @RequestParam("providerId") int providerId,
-                                @RequestParam("itemDate") String itemDate,
+    public String newItemToggle(Model model, @RequestParam("providerId") int providerId,
+                                @RequestParam("itemDate") @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate itemDate,
                                 @RequestParam ("startTP") int startTP) throws AuthenticationRequiredException, InvalidValueException {
         if(providerId == 0) throw new InvalidValueException("Provider is invalid");
 
-        LocalDate date;
-        try{
-            date = LocalDate.parse(itemDate, sqlDateFormatter);
-            if(date.isBefore(LocalDate.now()) && !request.isUserInRole("ADMIN")) throw new InvalidValueException("Provider is invalid");
-        } catch (DateTimeParseException ignored){
-            throw new InvalidValueException("Data format is invalid");
-        }
-
-        int currentTP = LocalTime.now().toSecondOfDay();
-
-        if(!request.isUserInRole("ADMIN") && date.isEqual(LocalDate.now()) && startTP < currentTP) startTP = currentTP;
         int tpInMinutes = startTP / 60;
         int itemStartHour = tpInMinutes / 60;
         int itemStartMinute = tpInMinutes % 60;
@@ -99,7 +87,6 @@ public class CalendarController extends PlainController{
         model.addAttribute("itemStartHour", itemStartHour);
         model.addAttribute("itemStartMinute", itemStartMinute);
         model.addAttribute("itemDate", itemDate);
-        model.addAttribute("currentDate", LocalDate.now());
 
         return "newItemToggle";
     }
@@ -118,13 +105,15 @@ public class CalendarController extends PlainController{
     }
 
     @RequestMapping(value = {"/ajax/itemInfo"}, method = RequestMethod.POST)
-    public String itemInfo(@RequestParam ("itemId") long itemId, Model model) throws AuthenticationRequiredException  {
+    public String itemInfo(@RequestParam ("itemId") long itemId, Model model) {
         CalendarItem item = this.calendarItemService.getItemById(itemId);
-        LocalTime minSplitTime;
+        LocalTime minSplitTime = item.getStartDate().plusMinutes(10);
 
-        if(this.getAuthenticatedUser().hasRole("ADMIN") || item.getItemDate().isAfter(LocalDate.now())){
-            minSplitTime = item.getStartDate().plusMinutes(10);
-        } else minSplitTime = LocalTime.now().withMinute(LocalTime.now().getMinute() / 5 * 5).plusMinutes(10);
+        /*
+        if(!this.getAuthenticatedUser().hasRole("ADMIN") && item.getItemDate().isAfter(LocalDate.now())){
+            minSplitTime = LocalTime.now().withMinute(LocalTime.now().getMinute() / 5 * 5).plusMinutes(10);
+        }
+         */
 
         LocalTime maxSplitTime = item.getDeadline().minusMinutes(10);
 
@@ -162,9 +151,9 @@ public class CalendarController extends PlainController{
 
     @RequestMapping(value = {"/ajax/delete"}, method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String delete(@RequestParam ("itemId") long itemId, @RequestParam(value = "groupId", required = false) Long groupId) {
-        if(groupId != null) this.calendarItemService.deleteGroupOfItems(groupId, itemId);
-        else this.calendarItemService.deleteItem(itemId);
+    public String delete(@RequestParam ("itemId") long itemId, @RequestParam(value = "groupId", required = false) Long groupId) throws AuthenticationRequiredException {
+        if(groupId != null) this.calendarItemService.deleteGroupOfItems(groupId, itemId, getAuthenticatedUser());
+        else this.calendarItemService.deleteItem(itemId, getAuthenticatedUser());
 
         return "{\"status\":\"Success\"}";
     }

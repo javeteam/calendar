@@ -4,13 +4,11 @@ import com.aspect.calendar.config.WebSecurity;
 import com.aspect.calendar.dao.ProjectEntitiesDao;
 import com.aspect.calendar.dao.XtrfDao;
 import com.aspect.calendar.entity.AppConfig;
-import com.aspect.calendar.entity.calendar.CalendarItem;
 import com.aspect.calendar.entity.calendar.Project;
 import com.aspect.calendar.entity.exceptions.EntityNotExistException;
 import com.aspect.calendar.entity.exceptions.FolderCreationException;
 import com.aspect.calendar.entity.exceptions.InvalidValueException;
 import com.aspect.calendar.entity.user.AppUser;
-import org.apache.logging.log4j.util.PropertySource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,7 +133,8 @@ public class ProjectEntitiesService {
     }
 
     public Project refreshProjectData(long id) throws EntityNotExistException{
-        Project project = this.projectEntitiesDao.get(id);
+        Project project = this.projectEntitiesDao.getProjectToManage(id);
+        project.setXtrfId(null);
         List<Project> projectList = Collections.singletonList(project);
 
         this.xtrfDao.setXtrfIds(projectList);

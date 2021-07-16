@@ -133,7 +133,7 @@ public class CalendarItemDao extends JdbcDaoSupport {
                 "LEFT JOIN items_group ig ON ci.group_id = ig.id " +
                 "LEFT JOIN admin manager ON ci.manager = manager.id " +
                 "LEFT JOIN admin provider ON ci.provider = provider.id " +
-                "WHERE ci.item_date >= :dateFrom AND ci.item_date <= :dateTo " +
+                "WHERE ci.item_date >= :dateFrom AND ci.item_date <= :dateTo AND NOT ci.deleted " +
                 (providerId > 0 ? "AND ci.provider = :providerId" : "");
 
         this.namedJdbcTemplate.query(request, params, new ItemsToCSVCallbackHandler(stringBuilder));
@@ -141,19 +141,17 @@ public class CalendarItemDao extends JdbcDaoSupport {
         return stringBuilder.toString();
     }
 
-    public List<CalendarItem> getItemsByProjectIds(List<Long> projectIds){
-        if(projectIds.isEmpty()) return new ArrayList<>();
-        MapSqlParameterSource params = new MapSqlParameterSource("projectIds", projectIds);
-        final String whereClause = "WHERE group_id IN (:projectIds)";
-        try{
-            return this.namedJdbcTemplate.query(selectRequest + whereClause, params, new ItemRowMapper());
-        } catch (EmptyResultDataAccessException ignored){
-            return new ArrayList<>();
-        }
-    }
+   public List<CalendarItem> getProviderGroupItems(long groupId, long itemId) {
+       final String whereClause = "WHERE ci.group_id = ? and ci.provider = (SELECT provider FROM calendar_item WHERE calendar_item.id = ?) ORDER BY ci.item_date";
+       try {
+           return this.jdbcTemplate.query(selectRequest + whereClause, new ItemRowMapper(), groupId, itemId);
+       } catch (EmptyResultDataAccessException ignored) {
+           return new ArrayList<>();
+       }
+   }
 
     public void update(CalendarItem item){
-        final String updateRequest = "UPDATE calendar_item SET manager = ?, modified_by = ?, modification_date = ?, item_date = ?, start_tp = ?, deadline_tp = ?, description = ?, group_id = ? WHERE id = ?";
+        final String updateRequest = "UPDATE calendar_item SET manager = ?, modified_by = ?, modification_date = ?, item_date = ?, start_tp = ?, deadline_tp = ?, description = ?, group_id = ?, deleted = ? WHERE id = ?";
 
         this.jdbcTemplate.update( connection -> {
             PreparedStatement ps = connection.prepareStatement(updateRequest);
@@ -165,7 +163,8 @@ public class CalendarItemDao extends JdbcDaoSupport {
             ps.setInt(6, item.getDeadline().toSecondOfDay());
             ps.setString(7, item.getDescription());
             ps.setLong(8, item.getGroup().getId());
-            ps.setLong(9, item.getId());
+            ps.setBoolean(9, item.isDeleted());
+            ps.setLong(10, item.getId());
 
             return ps;
         });
@@ -216,13 +215,13 @@ public class CalendarItemDao extends JdbcDaoSupport {
         });
     }
 
-    public void deleteGroupOfItems(long groupId, long itemId){
+    /*public void deleteGroupOfItems(long groupId, long itemId){
         final String request = "DELETE FROM calendar_item " +
                 "WHERE calendar_item.group_id = ? AND calendar_item.provider = (" +
                 "SELECT ci.provider " +
                 "FROM (SELECT * FROM calendar_item ici WHERE ici.id = ?) AS ci )";
         this.jdbcTemplate.update(request, groupId, itemId);
-    }
+    }*/
 
     public void delete(long itemId){
         final String request = "DELETE FROM calendar_item WHERE id = ?";
@@ -239,7 +238,7 @@ public class CalendarItemDao extends JdbcDaoSupport {
 
         String request = "SELECT g.name FROM calendar_item " +
                 "LEFT JOIN items_group g ON calendar_item.group_id = g.id " +
-                "WHERE calendar_item.id != :itemId AND provider = :userId AND item_date = :itemDate AND (start_tp < :startTP AND deadline_tp > :startTP OR start_tp < :endTP AND deadline_tp > :endTP OR start_tp >= :startTP AND deadline_tp <= :endTP) ";
+                "WHERE calendar_item.id != :itemId AND NOT calendar_item.deleted AND provider = :userId AND item_date = :itemDate AND (start_tp < :startTP AND deadline_tp > :startTP OR start_tp < :endTP AND deadline_tp > :endTP OR start_tp >= :startTP AND deadline_tp <= :endTP) ";
         try{
             return this.namedJdbcTemplate.query(request, params, (rs, i) -> rs.getString("name"));
         } catch (EmptyResultDataAccessException ignored){
@@ -269,6 +268,7 @@ public class CalendarItemDao extends JdbcDaoSupport {
             item.setStartDate(LocalTime.ofSecondOfDay(rs.getInt("start_tp")));
             item.setDeadline(LocalTime.ofSecondOfDay(rs.getInt("deadline_tp")));
             item.setDescription(rs.getString("description"));
+            item.setDeleted(rs.getBoolean("deleted"));
 
             Person person = item.getProvider();
             person.setId(rs.getInt("provider"));

@@ -76,10 +76,10 @@ public class UserDayCalendar {
             case POTENTIAL:
             case PROJECT:
             case JOB:
-                this.factLoad += item.getDuration();
+                if(!item.isDeleted()) this.factLoad += item.getDuration();
                 break;
             case ABSENCE:
-                this.plannedLoad -= item.getDuration();
+                if(!item.isDeleted()) this.plannedLoad -= item.getDuration();
         }
     }
 

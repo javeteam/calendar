@@ -49,43 +49,39 @@
         <c:if test="${hasManagerRole || hasAdminRole}">
             <div class="submit-section">
                 <div class="option-block">
-                    <c:if test="${hasAdminRole || !item.deadlinePassed()}">
+                    <div class="option">
+                        <a class="edit">Edit</a>
+                        <form id="editForm" hidden action="${pageContext.request.contextPath}/ajax/editItemToggle" method="post">
+                            <input type="hidden" name="itemId" value="${item.id}">
+                        </form>
+                    </div>
+                    <c:if test="${minSplitTime.isBefore(maxSplitTime)}">
                         <div class="option">
-                            <a class="edit">Edit</a>
-                            <form id="editForm" hidden action="${pageContext.request.contextPath}/ajax/editItemToggle" method="post">
-                                <input type="hidden" name="itemId" value="${item.id}">
-                            </form>
+                            <a class="split">Split</a>
                         </div>
-                        <c:if test="${minSplitTime.isBefore(maxSplitTime)}">
-                            <div class="option">
-                                <a class="split">Split</a>
-                            </div>
-                            <div id="splitOptions" class="option-details hidden">
-                                <form id="splitForm" action="${pageContext.request.contextPath}/ajax/split" method="post">
-                                    <span class="title">Split point:</span>
-                                    <input type="hidden" name="itemId" value="${item.id}">
-                                    <input type="time" name="splitTime" min="${minSplitTime}" max="${maxSplitTime}" value="${maxSplitTime}" step="300" required>
-                                    <a class="text-btn" id="splitSubmit">Save</a>
-                                </form>
-                                <span id="error-section" class="hidden">Value must be between ${minSplitTime} and ${maxSplitTime} and multiple of 5</span>
-                            </div>
-                        </c:if>
+                        <div id="splitOptions" class="option-details hidden">
+                            <form id="splitForm" action="${pageContext.request.contextPath}/ajax/split" method="post">
+                                <span class="title">Split point:</span>
+                                <input type="hidden" name="itemId" value="${item.id}">
+                                <input type="time" name="splitTime" min="${minSplitTime}" max="${maxSplitTime}" value="${maxSplitTime}" step="300" required>
+                                <a class="text-btn" id="splitSubmit">Save</a>
+                            </form>
+                            <span id="error-section" class="hidden">Value must be between ${minSplitTime} and ${maxSplitTime} and multiple of 5</span>
+                        </div>
                     </c:if>
-                    <c:if test="${hasAdminRole || !item.startDatePassed()}">
-                        <div class="option">
-                            <a class="delete">Delete</a>
-                            <form id="deleteForm" hidden action="${pageContext.request.contextPath}/ajax/delete" method="post">
-                                <input type="hidden" name="itemId" value="${item.id}">
-                                <input type="hidden" name="groupId" value="${item.group.id}">
-                                <input type="hidden" name="providerId" value="${item.provider.id}">
-                            </form>
+                    <div class="option">
+                        <a class="delete">Delete</a>
+                        <form id="deleteForm" hidden action="${pageContext.request.contextPath}/ajax/delete" method="post">
+                            <input type="hidden" name="itemId" value="${item.id}">
+                            <input type="hidden" name="groupId" value="${item.group.id}">
+                            <input type="hidden" name="providerId" value="${item.provider.id}">
+                        </form>
+                    </div>
+                    <c:if test="${item.group.size > 1}">
+                        <div id="deleteOptions" class="option-details hidden">
+                            <a class="text-btn" id="delItem">Delete item</a>
+                            <a class="text-btn" id="delGroup">Delete group</a>
                         </div>
-                        <c:if test="${item.group.size > 1 && (hasAdminRole || !item.group.startDatePassed())}">
-                            <div id="deleteOptions" class="option-details hidden">
-                                <a class="text-btn" id="delItem">Delete item</a>
-                                <a class="text-btn" id="delGroup">Delete group</a>
-                            </div>
-                        </c:if>
                     </c:if>
                 </div>
             </div>

@@ -28,7 +28,8 @@ public class EncryptedPasswordUtils {
     }
 
     public static void main(String[] args) {
-        String password = genPassword(10);
+        //String password = genPassword(10);
+        String password = "admin";
         String encryptedPassword = encryptPassword(password);
         System.out.println("Password : " + password + ", encrypted password: " + encryptedPassword);
 
